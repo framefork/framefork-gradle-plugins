@@ -7,9 +7,6 @@ testLoggerPlugin = "4.0.0"
 # kotlin("plugin.serialization") / kotlin("kapt") version-less. Matches the Kotlin version typed-ids compiles against.
 kotlin = "2.2.21"
 
-[plugins]
-pluginPublish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
-
 [libraries]
 junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
 
