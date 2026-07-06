@@ -14,6 +14,14 @@ gradlePlugin {
             id = "org.framefork.build"
             implementationClass = "org.framefork.build.FrameforkSettingsPlugin"
         }
+        register("frameforkLibraryPublished") {
+            id = "org.framefork.build.library-published"
+            implementationClass = "org.framefork.build.LibraryPublishedPlugin"
+        }
+        register("frameforkLibraryInternal") {
+            id = "org.framefork.build.library-internal"
+            implementationClass = "org.framefork.build.LibraryInternalPlugin"
+        }
     }
 }
 
