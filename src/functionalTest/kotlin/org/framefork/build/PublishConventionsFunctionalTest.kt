@@ -1,6 +1,9 @@
 package org.framefork.build
 
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -35,6 +38,23 @@ class PublishConventionsFunctionalTest {
         // compileOnly is rewritten to an optional compile-scoped dependency in the POM.
         assertTrue(pomText.contains("<artifactId>jsr305</artifactId>"), pomText)
         assertTrue(pomText.contains("<optional>true</optional>"), pomText)
+    }
+
+    @Test
+    fun `publish wipes the staging repo before any module publishes`() {
+        writeConsumerProject()
+
+        val stagingDir = projectDir.resolve("build/staging-deploy")
+        val stale = stagingDir.resolve("org/framefork/foo/9.9.9/foo-9.9.9.jar")
+        stale.parentFile.mkdirs()
+        stale.writeText("stale")
+
+        val result = runner(":foo:publish").build()
+
+        // cleanAllPublications lives on the root project and runs as a dependency of the module's publish.
+        assertEquals(TaskOutcome.SUCCESS, result.task(":cleanAllPublications")?.outcome, result.output)
+        assertFalse(stale.isFile, "stale staging artifact was wiped before publishing")
+        assertTrue(projectDir.resolve("build/staging-deploy/org/framefork/foo/1.2.3/foo-1.2.3.jar").isFile, "fresh artifact published")
     }
 
     @Test

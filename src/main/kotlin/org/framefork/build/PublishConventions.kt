@@ -7,10 +7,8 @@ import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.register
 import java.io.Serializable
 
 /**
@@ -123,20 +121,15 @@ internal fun Project.configureStagingPublishing() {
         }
     }
 
-    // A single wipe of the staging dir, registered once on the root project and depended on by every module's `publish`,
-    // so a `publish` run always starts from an empty staging repo regardless of which modules take part.
-    if (rootProject.tasks.findByName(CLEAN_ALL_PUBLICATIONS) == null) {
-        rootProject.tasks.register<Delete>(CLEAN_ALL_PUBLICATIONS) {
-            outputs.upToDateWhen { false }
-            delete(rootProject.layout.buildDirectory.dir("staging-deploy"))
-        }
-    }
+    // The root `cleanAllPublications` task wipes the shared staging dir once (registered by FrameforkProjectInitAction
+    // when beforeProject visits the root project); every module's `publish` depends on it so a `publish` run always
+    // starts from an empty staging repo regardless of which modules take part. It is referenced by task path — a lazy
+    // reference that defers resolution — rather than by reaching into the root project's task container from this
+    // subproject's apply(), which Isolated Projects forbids as cross-project mutable-state access.
     tasks.named("publish") {
-        dependsOn(rootProject.tasks.named(CLEAN_ALL_PUBLICATIONS))
+        dependsOn(":$CLEAN_ALL_PUBLICATIONS_TASK")
     }
 }
-
-private const val CLEAN_ALL_PUBLICATIONS = "cleanAllPublications"
 
 /** Serializable snapshot of a `compileOnly` dependency's coordinates, safe to capture in a config-cached withXml action. */
 private data class OptionalDependency(
