@@ -1,2 +1,8 @@
+[versions]
+junit = "5.11.4"
+
 [plugins]
 pluginPublish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
+
+[libraries]
+junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
