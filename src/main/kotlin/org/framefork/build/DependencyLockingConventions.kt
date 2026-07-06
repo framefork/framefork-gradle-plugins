@@ -16,11 +16,7 @@ import org.gradle.api.Project
  * off, but it never taints the everyday build.
  */
 internal fun Project.configureDependencyLocking() {
-    val ext = extensions.findByType(FrameforkProjectExtension::class.java)
-        ?: error(
-            "The 'frameforkProject' extension is missing on project '$path'. " +
-                "Apply the 'org.framefork.build' settings plugin in settings.gradle.kts so it can propagate the framefork {} knobs to every project.",
-        )
+    val ext = frameforkProjectExtension()
 
     if (!ext.dependencyLocking.getOrElse(false)) {
         return

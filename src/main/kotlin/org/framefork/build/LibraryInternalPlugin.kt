@@ -11,10 +11,6 @@ import org.gradle.api.Project
 abstract class LibraryInternalPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        project.configureJavaConventions()
-        project.configureKotlinConventions()
-        project.configureStaticAnalysis()
-        project.configureTestConventions()
-        project.configureDependencyLocking()
+        project.configureLibraryBaseConventions()
     }
 }

@@ -25,11 +25,7 @@ import org.gradle.kotlin.dsl.withType
  * All configuration is lazy (Providers, `configureEach`, per-task extensions), so it stays configuration-cache-safe.
  */
 internal fun Project.configureStaticAnalysis() {
-    val ext = extensions.findByType(FrameforkProjectExtension::class.java)
-        ?: error(
-            "The 'frameforkProject' extension is missing on project '$path'. " +
-                "Apply the 'org.framefork.build' settings plugin in settings.gradle.kts so it can propagate the framefork {} knobs to every project.",
-        )
+    val ext = frameforkProjectExtension()
 
     pluginManager.apply("net.ltgt.errorprone")
     pluginManager.apply("net.ltgt.nullaway")

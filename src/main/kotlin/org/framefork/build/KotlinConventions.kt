@@ -46,11 +46,7 @@ abstract class KotlinSourcesPresentValueSource : ValueSource<Boolean, KotlinSour
  * marker from our classpath, exactly like the other convention sub-plugins.
  */
 internal fun Project.configureKotlinConventions() {
-    val ext = extensions.findByType(FrameforkProjectExtension::class.java)
-        ?: error(
-            "The 'frameforkProject' extension is missing on project '$path'. " +
-                "Apply the 'org.framefork.build' settings plugin in settings.gradle.kts so it can propagate the framefork {} knobs to every project.",
-        )
+    val ext = frameforkProjectExtension()
 
     val hasKotlinSources = providers.of(KotlinSourcesPresentValueSource::class.java) {
         parameters.sourceRoot.set(layout.projectDirectory.dir("src"))

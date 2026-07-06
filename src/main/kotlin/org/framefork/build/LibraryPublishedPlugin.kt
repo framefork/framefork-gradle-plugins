@@ -12,11 +12,7 @@ import org.gradle.api.Project
 abstract class LibraryPublishedPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        project.configureJavaConventions()
-        project.configureKotlinConventions()
-        project.configureStaticAnalysis()
-        project.configureTestConventions()
-        project.configureDependencyLocking()
+        project.configureLibraryBaseConventions()
         project.configureStagingPublishing()
     }
 }
