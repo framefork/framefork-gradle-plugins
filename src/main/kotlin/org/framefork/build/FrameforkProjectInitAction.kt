@@ -15,6 +15,7 @@ class FrameforkProjectInitAction(
     private val jdkVersion: Int,
     private val testsJdkVersion: Int?,
     private val jspecifyMode: Boolean,
+    private val dependencyLocking: Boolean,
 ) : IsolatedAction<Project> {
 
     override fun execute(project: Project) {
@@ -25,5 +26,6 @@ class FrameforkProjectInitAction(
             extension.testsJdkVersion.set(testsJdkVersion)
         }
         extension.jspecifyMode.set(jspecifyMode)
+        extension.dependencyLocking.set(dependencyLocking)
     }
 }

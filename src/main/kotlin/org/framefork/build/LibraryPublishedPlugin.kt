@@ -16,6 +16,7 @@ abstract class LibraryPublishedPlugin : Plugin<Project> {
         project.configureKotlinConventions()
         project.configureStaticAnalysis()
         project.configureTestConventions()
+        project.configureDependencyLocking()
         project.configureStagingPublishing()
     }
 }

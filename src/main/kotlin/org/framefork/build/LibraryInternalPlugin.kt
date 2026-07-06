@@ -15,5 +15,6 @@ abstract class LibraryInternalPlugin : Plugin<Project> {
         project.configureKotlinConventions()
         project.configureStaticAnalysis()
         project.configureTestConventions()
+        project.configureDependencyLocking()
     }
 }

@@ -22,9 +22,13 @@ abstract class FrameforkExtension {
     /** Whether NullAway runs in JSpecify mode. */
     abstract val jspecifyMode: Property<Boolean>
 
+    /** Whether every module locks its dependencies (Gradle lockfiles). Off by default — not every consumer wants lockfiles. */
+    abstract val dependencyLocking: Property<Boolean>
+
     init {
         minJavaVersion.convention(17)
         jdkVersion.convention(21)
         jspecifyMode.convention(true)
+        dependencyLocking.convention(false)
     }
 }

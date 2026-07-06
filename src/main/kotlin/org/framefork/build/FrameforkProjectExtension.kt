@@ -17,4 +17,6 @@ abstract class FrameforkProjectExtension {
     abstract val testsJdkVersion: Property<Int>
 
     abstract val jspecifyMode: Property<Boolean>
+
+    abstract val dependencyLocking: Property<Boolean>
 }
