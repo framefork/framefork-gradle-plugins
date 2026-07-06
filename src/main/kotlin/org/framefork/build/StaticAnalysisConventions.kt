@@ -46,6 +46,11 @@ internal fun Project.configureStaticAnalysis() {
         // `unknown enum constant TypeUseLocation.*` warnings when checker-qual is absent, which `-Werror` turns into
         // build failures. It is compile-only because consumers never need it at runtime.
         add("compileOnly", "org.checkerframework:checker-qual:${StaticAnalysisVersions.CHECKER_QUAL}")
+        // jsr305 is compile-only for the same reason as checker-qual: dependencies whose public API carries jsr305
+        // annotations (e.g. `@Nonnull(When.MAYBE)` used by Guava, Micrometer, Spring) force javac to resolve the
+        // `javax.annotation.meta.When` enum; without jsr305 on the classpath, javac emits `unknown enum constant
+        // When.MAYBE` warnings that `-Werror` turns into build failures.
+        add("compileOnly", "com.google.code.findbugs:jsr305:${StaticAnalysisVersions.JSR305}")
     }
 
     // Project-wide NullAway conventions inherited by every per-task NullAwayOptions.
@@ -111,7 +116,7 @@ internal fun Project.configureStaticAnalysis() {
 
 /**
  * Coordinates for the analyzer artifacts the helper injects into each *consumer* project (Error Prone core, NullAway,
- * JSpecify, checker-qual). They are the single source of truth for those runtime-added dependencies; the Gradle *plugin* artifact
+ * JSpecify, checker-qual, jsr305). They are the single source of truth for those runtime-added dependencies; the Gradle *plugin* artifact
  * versions live in the suite's `gradle/libs.versions.toml` (they are build-time dependencies of the suite itself).
  */
 internal object StaticAnalysisVersions {
@@ -119,4 +124,5 @@ internal object StaticAnalysisVersions {
     const val NULLAWAY = "0.13.7"
     const val JSPECIFY = "1.0.0"
     const val CHECKER_QUAL = "3.48.2"
+    const val JSR305 = "3.0.2"
 }

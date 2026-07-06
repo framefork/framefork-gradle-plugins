@@ -143,6 +143,39 @@ class StaticAnalysisFunctionalTest {
     }
 
     @Test
+    fun `jsr305 is on the compile classpath so jsr305 annotations do not break -Werror`() {
+        writeConsumerProject()
+        // A dependency's bytecode carrying jsr305 annotations (e.g. `@Nonnull(When.MAYBE)`) makes javac warn
+        // `unknown enum constant When.MAYBE` when jsr305 is absent, which -Werror turns into a failure.
+        // Referencing a jsr305 symbol directly from source is the minimal, network-free proxy: it only resolves
+        // (and only compiles under -Werror) when the convention has put jsr305 on the compile classpath.
+        // @Nonnull (not @CheckForNull) is used here because it is consistent with the @NullMarked default and
+        // does not produce a NullAway finding that would mask the classpath-presence signal.
+        write(
+            "modules/foo/src/main/java/foo/UsesJsr305.java",
+            """
+            package foo;
+
+            import javax.annotation.Nonnull;
+
+            public final class UsesJsr305 {
+
+                private UsesJsr305() {
+                }
+
+                public static @Nonnull String value() {
+                    return "hello";
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner(":foo:compileJava").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":foo:compileJava")?.outcome, result.output)
+    }
+
+    @Test
     fun `a real nullness violation fails compileJava with a NullAway error`() {
         writeConsumerProject()
         write(
