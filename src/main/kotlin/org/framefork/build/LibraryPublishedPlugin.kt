@@ -13,5 +13,6 @@ abstract class LibraryPublishedPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.configureJavaConventions()
         project.configureStaticAnalysis()
+        project.configureTestConventions()
     }
 }

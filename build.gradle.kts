@@ -36,6 +36,7 @@ dependencies {
     // Pinned so the helper functions can apply these plugins by id and configure them with their real DSL types.
     implementation(libs.errorpronePlugin)
     implementation(libs.nullawayPlugin)
+    implementation(libs.testLoggerPlugin)
 
     testImplementation(platform(libs.junitBom))
     testImplementation("org.junit.jupiter:junit-jupiter")
