@@ -1,0 +1,57 @@
+name: Run Checks via Gradle
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.console=plain -Dorg.gradle.daemon=false -Dorg.gradle.stacktrace=always"
+
+jobs:
+  gradle:
+    name: JDK ${{ matrix.jdk }} / Gradle ${{ matrix.testedGradleVersion || 'embedded' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [21, 25]
+        testedGradleVersion: ["", "9.0"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          # Both 21 and 25 stay installed in every cell: the functional tests spawn consumer Gradle builds whose
+          # Java toolchain is 21 (default) or 25 (some tests), and the suite does not enable toolchain auto-download,
+          # so every needed JDK must already be present. The last entry is the default JAVA_HOME the outer Gradle
+          # runs on — matrix.jdk (21 or 25), so the suite itself is built and tested on both.
+          java-version: |
+            21
+            25
+            ${{ matrix.jdk }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary-as-pr-comment: on-failure
+
+      - name: Gradle toolchains info
+        run: ./gradlew -q javaToolchains
+
+      - name: Execute Gradle build
+        # An empty testedGradleVersion resolves to the embedded (default) TestKit Gradle; "9.0" exercises the consumer baseline.
+        run: ./gradlew build test functionalTest -PtestedGradleVersion=${{ matrix.testedGradleVersion }}
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-jdk${{ matrix.jdk }}-gradle${{ matrix.testedGradleVersion || 'embedded' }}
+          path: |
+            build/test-results/**/*.xml
+          retention-days: 7
+          overwrite: true
