@@ -3,6 +3,9 @@ junit = "5.11.4"
 errorpronePlugin = "5.1.0"
 nullawayPlugin = "3.1.0"
 testLoggerPlugin = "4.0.0"
+# Kotlin Gradle plugin artifacts pinned onto the suite's classpath so consumer modules can apply kotlin("jvm") /
+# kotlin("plugin.serialization") / kotlin("kapt") version-less. Matches the Kotlin version typed-ids compiles against.
+kotlin = "2.2.21"
 
 [plugins]
 pluginPublish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
@@ -15,3 +18,8 @@ junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
 errorpronePlugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "errorpronePlugin" }
 nullawayPlugin = { module = "net.ltgt.gradle:gradle-nullaway-plugin", version.ref = "nullawayPlugin" }
 testLoggerPlugin = { module = "com.adarshr:gradle-test-logger-plugin", version.ref = "testLoggerPlugin" }
+
+# Backs the org.jetbrains.kotlin.jvm and org.jetbrains.kotlin.kapt plugin ids; kotlinSerialization backs
+# org.jetbrains.kotlin.plugin.serialization. On the classpath so consumer modules resolve them version-less.
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinSerialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }

@@ -13,6 +13,7 @@ abstract class LibraryPublishedPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         project.configureJavaConventions()
+        project.configureKotlinConventions()
         project.configureStaticAnalysis()
         project.configureTestConventions()
         project.configureStagingPublishing()

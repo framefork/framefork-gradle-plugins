@@ -54,6 +54,11 @@ dependencies {
     implementation(libs.nullawayPlugin)
     implementation(libs.testLoggerPlugin)
 
+    // On the classpath so consumer modules can apply kotlin("jvm") / kotlin("plugin.serialization") / kotlin("kapt")
+    // version-less, and so the helpers can configure Kotlin with its real DSL types (KotlinJvmProjectExtension / JvmTarget).
+    implementation(libs.kotlinGradlePlugin)
+    implementation(libs.kotlinSerialization)
+
     testImplementation(platform(libs.junitBom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
