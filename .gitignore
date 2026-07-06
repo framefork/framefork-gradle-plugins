@@ -3,3 +3,7 @@
 .kotlin/
 .idea/
 .claude/
+
+# the gradle wrapper jar is already tracked; this ignores stray jars (e.g. the JReleaser CLI the release action drops in)
+*.jar
+JRELEASER_VERSION
