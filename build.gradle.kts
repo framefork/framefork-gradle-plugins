@@ -33,6 +33,10 @@ configurations["functionalTestRuntimeOnly"].extendsFrom(configurations["testRunt
 gradlePlugin.testSourceSets(functionalTest)
 
 dependencies {
+    // Pinned so the helper functions can apply these plugins by id and configure them with their real DSL types.
+    implementation(libs.errorpronePlugin)
+    implementation(libs.nullawayPlugin)
+
     testImplementation(platform(libs.junitBom))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

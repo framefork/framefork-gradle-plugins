@@ -1,8 +1,15 @@
 [versions]
 junit = "5.11.4"
+errorpronePlugin = "5.1.0"
+nullawayPlugin = "3.1.0"
 
 [plugins]
 pluginPublish = { id = "com.gradle.plugin-publish", version = "2.1.1" }
 
 [libraries]
 junitBom = { module = "org.junit:junit-bom", version.ref = "junit" }
+
+# Gradle plugin artifacts pinned onto the suite's compile/runtime classpath: the helpers apply these plugins by id and
+# configure them with their real DSL types (ErrorProneOptions / NullAwayExtension), not via reflection.
+errorpronePlugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "errorpronePlugin" }
+nullawayPlugin = { module = "net.ltgt.gradle:gradle-nullaway-plugin", version.ref = "nullawayPlugin" }
