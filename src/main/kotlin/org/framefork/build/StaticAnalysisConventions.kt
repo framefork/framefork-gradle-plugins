@@ -57,59 +57,32 @@ internal fun Project.configureStaticAnalysis() {
             disableWarningsInGeneratedCode.set(true)
             // The generated @NullMarked package-infos (and any other generated sources) carry no code to null-check.
             excludedPaths.set(".*/build/generated/.*")
-            allDisabledChecksAsWarnings.set(true)
+            // Report every default-check finding (instead of stopping at the first) and downgrade it to a warning;
+            // -Werror (set in configureJavaConventions) then turns the whole batch back into a build failure. Only
+            // Error Prone's on-by-default checks run here: enabling the opt-in catalogue fleet-wide (the former
+            // allDisabledChecksAsWarnings) made every new stylistic check a hard failure on each Error Prone bump.
             allErrorsAsWarnings.set(true)
             // The disabled-check list is curated once but Error Prone's catalogue drifts across releases (checks get
             // renamed/removed); tolerate names this Error Prone version no longer knows instead of failing the compile.
             ignoreUnknownCheckNames.set(true)
 
-            // Curated to match the framefork house strictness: silence the checks that are noisy or stylistic
-            // rather than correctness-relevant, so the remaining set stays meaningful under -Werror.
+            // Only Error Prone's on-by-default checks run (opt-in checks stay off), so this list only names the
+            // on-by-default checks we deliberately opt out of: stylistic/opinionated ones we don't want failing the
+            // build under -Werror, plus the class-level nullness suggestion that fights our package @NullMarked.
             disable(
                 // Nullness is declared once at package level by the generated package-info, so the
                 // class-level suggestion is actively wrong for this convention.
                 "AddNullMarkedToClass",
-                "AndroidJdkLibsChecker",
-                "AnnotationPosition",
-                "AvoidObjectArrays",
-                "BooleanParameter",
-                "CanIgnoreReturnValueSuggester",
-                "CatchingUnchecked",
-                "ConstantPatternCompile",
-                "DefaultLocale",
-                "DeduplicateConstants",
                 "DistinctVarargsChecker",
-                "FieldCanBeFinal",
-                "ImmutableMemberCollection",
-                "InconsistentOverloads",
                 "InlineMeSuggester",
-                "InterfaceWithOnlyStatics",
-                "Interruption",
                 "InvalidBlockTag",
-                "Java7ApiChecker",
-                "Java8ApiChecker",
-                "MemberName",
-                "MethodCanBeStatic",
                 "MissingSummary",
-                "MockitoDoSetup",
                 "OptionalOfRedundantMethod",
-                "PreferredInterfaceType",
-                "ReturnMissingNullable",
                 "SameNameButDifferent",
                 "StatementSwitchToExpressionSwitch",
-                "StaticOrDefaultInterfaceMethod",
-                "StaticQualifiedUsingExpression",
                 "StringSplitter",
-                "SuppressWarningsWithoutExplanation",
-                "TooManyParameters",
                 "TraditionalSwitchExpression",
-                "TryFailRefactoring",
-                "TypeParameterNaming",
-                "UnnecessaryFinal",
                 "UnnecessaryStringBuilder",
-                "Var",
-                "WildcardImport",
-                "YodaCondition",
             )
 
             nullaway {
