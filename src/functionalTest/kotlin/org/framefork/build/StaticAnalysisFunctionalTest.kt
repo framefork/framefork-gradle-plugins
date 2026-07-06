@@ -112,6 +112,37 @@ class StaticAnalysisFunctionalTest {
     }
 
     @Test
+    fun `checker-qual is on the compile classpath so Checker-Framework annotations do not break -Werror`() {
+        writeConsumerProject()
+        // A dependency's bytecode carrying Checker-Framework annotations (referencing TypeUseLocation) makes javac warn
+        // `unknown enum constant TypeUseLocation.*` when checker-qual is absent, which -Werror turns into a failure.
+        // Referencing a checker-qual symbol directly from source is the minimal, network-free proxy: it only resolves
+        // (and only compiles under -Werror) when the convention has put checker-qual on the compile classpath.
+        write(
+            "modules/foo/src/main/java/foo/UsesChecker.java",
+            """
+            package foo;
+
+            import org.checkerframework.checker.nullness.qual.NonNull;
+
+            public final class UsesChecker {
+
+                private UsesChecker() {
+                }
+
+                public static @NonNull String value() {
+                    return "hello";
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner(":foo:compileJava").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":foo:compileJava")?.outcome, result.output)
+    }
+
+    @Test
     fun `a real nullness violation fails compileJava with a NullAway error`() {
         writeConsumerProject()
         write(

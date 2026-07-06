@@ -41,6 +41,11 @@ internal fun Project.configureStaticAnalysis() {
         add("errorprone", "com.uber.nullaway:nullaway:${StaticAnalysisVersions.NULLAWAY}")
         // JSpecify is API-visible: consumers of the library see the `@NullMarked`/`@Nullable` contract on the public surface.
         add("api", "org.jspecify:jspecify:${StaticAnalysisVersions.JSPECIFY}")
+        // Checker-qual completes the nullness stack at compile time only: dependencies whose bytecode carries
+        // Checker-Framework annotations (e.g. hypersistence-utils references `TypeUseLocation`) make javac emit
+        // `unknown enum constant TypeUseLocation.*` warnings when checker-qual is absent, which `-Werror` turns into
+        // build failures. It is compile-only because consumers never need it at runtime.
+        add("compileOnly", "org.checkerframework:checker-qual:${StaticAnalysisVersions.CHECKER_QUAL}")
     }
 
     // Project-wide NullAway conventions inherited by every per-task NullAwayOptions.
@@ -106,11 +111,12 @@ internal fun Project.configureStaticAnalysis() {
 
 /**
  * Coordinates for the analyzer artifacts the helper injects into each *consumer* project (Error Prone core, NullAway,
- * JSpecify). They are the single source of truth for those runtime-added dependencies; the Gradle *plugin* artifact
+ * JSpecify, checker-qual). They are the single source of truth for those runtime-added dependencies; the Gradle *plugin* artifact
  * versions live in the suite's `gradle/libs.versions.toml` (they are build-time dependencies of the suite itself).
  */
 internal object StaticAnalysisVersions {
     const val ERROR_PRONE_CORE = "2.50.0"
     const val NULLAWAY = "0.13.7"
     const val JSPECIFY = "1.0.0"
+    const val CHECKER_QUAL = "3.48.2"
 }
