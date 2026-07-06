@@ -28,12 +28,27 @@ internal fun Project.configureJavaConventions() {
 
     pluginManager.apply("java-library")
 
+    val minJavaVersion = ext.minJavaVersion
+
     // Resolved compile toolchain: -Pjdk.version wins over the framefork { jdkVersion } knob.
+    // The `zip` validates `minJavaVersion <= jdkVersion` as the provider resolves — a `.get()`-free guard that stays
+    // lazy and config-cache-safe, and catches the resolved pair (after `-P` overrides), so a bad combination fails
+    // with a knob-naming message instead of the raw javac `error: release version N not supported`.
     val resolvedJdkVersion: Provider<Int> = providers.gradleProperty("jdk.version").map(String::toInt).orElse(ext.jdkVersion)
+        .zip(minJavaVersion) { jdk, min ->
+            require(min <= jdk) { "framefork: minJavaVersion ($min) must be <= jdkVersion ($jdk)" }
+            jdk
+        }
     // Resolved test-runtime JDK: -Ptests.jdk.version, else the framefork { testsJdkVersion } knob, else the resolved compile toolchain.
+    // Same guard for `minJavaVersion <= testsJdkVersion`: bytecode compiled with `--release minJavaVersion` cannot launch
+    // on an older test JDK, which would otherwise surface as an `UnsupportedClassVersionError` only once tests run.
     val resolvedTestsJdkVersion: Provider<Int> = providers.gradleProperty("tests.jdk.version").map(String::toInt)
         .orElse(ext.testsJdkVersion)
         .orElse(resolvedJdkVersion)
+        .zip(minJavaVersion) { tests, min ->
+            require(min <= tests) { "framefork: minJavaVersion ($min) must be <= testsJdkVersion ($tests)" }
+            tests
+        }
 
     extensions.configure<JavaPluginExtension> {
         toolchain.languageVersion.set(resolvedJdkVersion.map { JavaLanguageVersion.of(it) })

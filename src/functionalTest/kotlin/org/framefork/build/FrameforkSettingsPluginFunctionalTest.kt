@@ -142,6 +142,32 @@ class FrameforkSettingsPluginFunctionalTest {
         assertTrue(result.output.contains("cannot be changed any further"), result.output)
     }
 
+    @Test
+    fun `warns when no subprojects are discovered`() {
+        writeSettings(
+            """
+            plugins {
+                id("org.framefork.build")
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        write("build.gradle.kts", "")
+
+        // Neither modules/ nor testing/ exists, so the plugin wires nothing. It must say so rather than no-op silently,
+        // but must not fail — a repo may be mid-migration with no modules yet.
+        val result = frameforkRunner()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments("help", "--configuration-cache", "--stacktrace")
+            .build()
+
+        assertTrue(result.output.contains("framefork: no subprojects discovered"), result.output)
+        assertTrue(result.output.contains("'modules/'"), result.output)
+        assertTrue(result.output.contains("'testing/'"), result.output)
+    }
+
     private fun writeSettings(content: String) = write("settings.gradle.kts", content)
 
     private fun write(relativePath: String, content: String) {

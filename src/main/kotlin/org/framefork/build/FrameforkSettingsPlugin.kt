@@ -3,6 +3,7 @@ package org.framefork.build
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.initialization.resolve.RepositoriesMode
+import org.gradle.api.logging.Logging
 
 /**
  * The `org.framefork.build` settings entrypoint every consumer applies (with a version) in `settings.gradle.kts`.
@@ -42,7 +43,8 @@ abstract class FrameforkSettingsPlugin : Plugin<Settings> {
 
     /** Scans `modules/` and `testing/` for immediate subdirs holding a `build.gradle.kts` and wires them in. */
     private fun discoverSubprojects(settings: Settings) {
-        for (groupDir in listOf("modules", "testing")) {
+        var discovered = 0
+        for (groupDir in DISCOVERY_DIRS) {
             val group = settings.rootDir.resolve(groupDir)
             if (!group.isDirectory) {
                 continue
@@ -54,7 +56,22 @@ abstract class FrameforkSettingsPlugin : Plugin<Settings> {
                 val path = ":${moduleDir.name}"
                 settings.include(path)
                 settings.project(path).projectDir = moduleDir
+                discovered++
             }
         }
+
+        // A consumer with neither directory gets a silent no-op — the plugin wires nothing. Warn (never fail: a repo may
+        // be mid-migration with no modules yet) so the missing convention wiring is diagnosable, not a mystery.
+        if (discovered == 0) {
+            Logging.getLogger(FrameforkSettingsPlugin::class.java).warn(
+                "framefork: no subprojects discovered — expected module directories (each with a build.gradle.kts) under " +
+                    DISCOVERY_DIRS.joinToString(" or ") { "'$it/'" } +
+                    ". No convention plugins were wired to any project.",
+            )
+        }
+    }
+
+    private companion object {
+        val DISCOVERY_DIRS = listOf("modules", "testing")
     }
 }

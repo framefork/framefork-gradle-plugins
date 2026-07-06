@@ -8,13 +8,13 @@ A dependency's public API carries **jsr305** (`javax.annotation.Nullable` = `@No
 
 The plugin already provides `checker-qual` and `jsr305` as `compileOnly` (they cover the vast majority of annotated JVM libraries — Guava, Spring, Micrometer, Hibernate/hypersistence). If a **different** annotation library trips it, add that one `compileOnly` in the affected module. If it recurs widely, it's a candidate for bundling in the plugin.
 
-## `error: release version N not supported` or `UnsupportedClassVersionError` in tests
+## `framefork: minJavaVersion (N) must be <= jdkVersion (M)` (or `… <= testsJdkVersion (M)`)
 
-A JDK-knob misconfiguration. The compile-once-test-many model requires:
-- `minJavaVersion ≤ jdkVersion` — you can't emit `--release 21` bytecode from a JDK 17 toolchain.
-- `minJavaVersion ≤ testsJdkVersion` — bytecode compiled for a newer release can't run on an older test JVM.
+A JDK-knob misconfiguration, caught up front by the plugin. The compile-once-test-many model requires:
+- `minJavaVersion ≤ jdkVersion` — you can't emit `--release 25` bytecode from a JDK 21 toolchain (raw javac would say `error: release version N not supported`).
+- `minJavaVersion ≤ testsJdkVersion` — bytecode compiled for a newer release can't run on an older test JVM (it would fail at test runtime with `UnsupportedClassVersionError`).
 
-Check the `framefork { }` block and any `-Pjdk.version` / `-Ptests.jdk.version` overrides in your CI matrix. Defaults (17 / 21) are always safe; only overrides bite.
+The plugin validates the **resolved** values, so `-Pjdk.version` / `-Ptests.jdk.version` overrides are checked too. Fix the `framefork { }` block or the override in your CI matrix so the pair named in the message holds. Defaults (17 / 21) are always safe; only overrides bite.
 
 ## javadoc fails with `self-closing element not allowed` (or other doclint errors)
 

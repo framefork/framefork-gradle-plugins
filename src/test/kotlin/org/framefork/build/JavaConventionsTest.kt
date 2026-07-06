@@ -6,6 +6,8 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import org.junit.jupiter.api.Test as JupiterTest
@@ -52,6 +54,45 @@ class JavaConventionsTest {
 
         assertEquals(21, compileToolchainVersion())
         assertEquals(25, testLauncherVersion(), "test launcher follows the explicit testsJdkVersion knob")
+    }
+
+    @JupiterTest
+    fun `rejects minJavaVersion above jdkVersion, naming the offending pair`() {
+        project = ProjectBuilder.builder().withProjectDir(projectDir).build()
+        seedFrameforkProjectExtension(minJavaVersion = 25, jdkVersion = 21, testsJdkVersion = null)
+
+        project.plugins.apply(LibraryInternalPlugin::class.java)
+
+        // The invariant fires as the compile-toolchain provider resolves — no eager `.get()` at configuration time.
+        assertFailsWithMessageContaining("framefork: minJavaVersion (25) must be <= jdkVersion (21)") { compileToolchainVersion() }
+    }
+
+    @JupiterTest
+    fun `rejects testsJdkVersion below minJavaVersion, naming the offending pair`() {
+        project = ProjectBuilder.builder().withProjectDir(projectDir).build()
+        seedFrameforkProjectExtension(minJavaVersion = 21, jdkVersion = 21, testsJdkVersion = 17)
+
+        project.plugins.apply(LibraryInternalPlugin::class.java)
+
+        assertFailsWithMessageContaining("framefork: minJavaVersion (21) must be <= testsJdkVersion (17)") { testLauncherVersion() }
+    }
+
+    @JupiterTest
+    fun `validates the resolved testsJdkVersion, so a -P override cannot sneak past`() {
+        projectDir.resolve("gradle.properties").writeText("tests.jdk.version=17\n")
+        project = ProjectBuilder.builder().withProjectDir(projectDir).build()
+        seedFrameforkProjectExtension(minJavaVersion = 21, jdkVersion = 21, testsJdkVersion = null)
+
+        project.plugins.apply(LibraryInternalPlugin::class.java)
+
+        assertFailsWithMessageContaining("framefork: minJavaVersion (21) must be <= testsJdkVersion (17)") { testLauncherVersion() }
+    }
+
+    /** Resolving a validated provider through the toolchain machinery may wrap the [IllegalArgumentException], so match anywhere in the cause chain. */
+    private fun assertFailsWithMessageContaining(expected: String, block: () -> Unit) {
+        val error = assertThrows(Throwable::class.java, block)
+        val messages = generateSequence<Throwable>(error) { it.cause }.mapNotNull { it.message }.toList()
+        assertTrue(messages.any { it.contains(expected) }, "expected a message containing \"$expected\" but got: $messages")
     }
 
     private fun seedFrameforkProjectExtension(minJavaVersion: Int, jdkVersion: Int, testsJdkVersion: Int?) {
