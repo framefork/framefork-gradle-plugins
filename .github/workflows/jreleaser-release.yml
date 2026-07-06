@@ -72,5 +72,5 @@ jobs:
           message: "chore: bump version to ${{ github.event.inputs.nextVersion }}-SNAPSHOT"
           author_email: 'bot@framefork.org'
           author_name: 'Framefork BOT'
-          branch: master
+          branch: main
           tags: false
