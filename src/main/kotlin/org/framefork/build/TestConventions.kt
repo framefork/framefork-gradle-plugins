@@ -56,7 +56,10 @@ internal fun Project.configureTestConventions() {
 }
 
 /**
- * JUnit BOM version the test conventions inject into every consumer project.
+ * JUnit BOM version the test conventions inject into every consumer project. Consumer-injected versions live in Kotlin
+ * `const`s rather than the suite's version catalog (see docs/design-decisions.md §4), so this value is intentionally a
+ * separate home from the `junit` entry in `gradle/libs.versions.toml`, which pins the suite's *own* test dependency.
+ * The two mean different things but should track the same release — bump both together so the suite tests on what it ships.
  */
 internal object TestConventionsVersions {
     const val JUNIT_BOM: String = "5.11.4"

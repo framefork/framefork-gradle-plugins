@@ -61,7 +61,23 @@ internal fun Project.configureKotlinConventions() {
     extensions.configure<KotlinJvmProjectExtension> {
         explicitApi()
         compilerOptions {
-            jvmTarget.set(ext.minJavaVersion.map { JvmTarget.fromTarget(it.toString()) })
+            jvmTarget.set(ext.minJavaVersion.map { kotlinJvmTargetFor(it) })
         }
     }
+}
+
+/**
+ * Maps a module's [FrameforkProjectExtension.minJavaVersion] to the Kotlin [JvmTarget] its `.kt` sources compile to.
+ *
+ * [JvmTarget.fromTarget] speaks Kotlin's own target strings, which don't line up with the plain integer the Java
+ * conventions use: Java 8 is `"1.8"` there (the constant is `JVM_1_8`), and Kotlin 2.2.x defines targets only up to
+ * `JVM_24`. Pure-Java modules accept the full `minJavaVersion` range, so this narrower bound is a Kotlin-only constraint
+ * — a module carrying Kotlin source must pick a `minJavaVersion` Kotlin can actually emit, and the raw
+ * `Unknown Kotlin JVM target` error `fromTarget` would otherwise throw names neither the range nor the cause.
+ */
+internal fun kotlinJvmTargetFor(minJavaVersion: Int): JvmTarget {
+    require(minJavaVersion in 8..24) {
+        "framefork: a module with Kotlin sources supports minJavaVersion 8..24 (the JVM targets Kotlin 2.2.x can emit); got $minJavaVersion"
+    }
+    return JvmTarget.fromTarget(if (minJavaVersion == 8) "1.8" else minJavaVersion.toString())
 }

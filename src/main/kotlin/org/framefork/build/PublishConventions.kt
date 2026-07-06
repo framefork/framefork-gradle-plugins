@@ -47,6 +47,8 @@ internal fun Project.configureStagingPublishing() {
 
                 pom {
                     url.set(projectUrl)
+                    // The framefork library line began in 2024 (typed-ids, its first published module), so consumer POMs
+                    // carry 2024 as their shared inception year — deliberately a year behind this plugin suite's own 2025.
                     inceptionYear.set("2024")
                     licenses {
                         license {
@@ -87,9 +89,11 @@ internal fun Project.configureStagingPublishing() {
         }
     }
 
-    // `group`/`description` and the module's `compileOnly` dependencies are all set by the consumer's build script,
-    // which runs *after* this plugin's apply(). afterEvaluate is the moment they are known; the values are snapshotted
-    // into plain, serializable data so the withXml action captures no project state and stays configuration-cache-safe.
+    // The one sanctioned afterEvaluate in the suite (the exception the CONTRIBUTING invariants call out): don't
+    // cargo-cult it elsewhere. `group`/`description` and the module's `compileOnly` dependencies are all set by the
+    // consumer's build script, which runs *after* this plugin's apply(); afterEvaluate is the moment they are known.
+    // The values are snapshotted into plain, serializable data so the withXml action captures no project state and
+    // stays configuration-cache-safe.
     afterEvaluate {
         val coordinates = "${project.group}:${project.name}"
         val optionalDependencies = configurations.getByName("compileOnly").dependencies

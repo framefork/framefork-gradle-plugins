@@ -1,4 +1,6 @@
 [versions]
+# Pins the suite's own JUnit test dependency. The JUnit version injected into consumer projects lives separately in
+# TestConventions.kt (TestConventionsVersions.JUNIT_BOM) — keep the two on the same release when bumping.
 junit = "5.11.4"
 errorpronePlugin = "5.1.0"
 nullawayPlugin = "3.1.0"
