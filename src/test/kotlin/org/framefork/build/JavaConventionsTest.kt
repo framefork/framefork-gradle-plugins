@@ -32,7 +32,7 @@ class JavaConventionsTest {
 
     @JupiterTest
     fun `-P properties override the extension knobs`() {
-        projectDir.resolve("gradle.properties").writeText("jdk.version=25\ntestsJdkVersion=25\n")
+        projectDir.resolve("gradle.properties").writeText("jdk.version=25\ntests.jdk.version=25\n")
         project = ProjectBuilder.builder().withProjectDir(projectDir).build()
         seedFrameforkProjectExtension(minJavaVersion = 17, jdkVersion = 21, testsJdkVersion = null)
 
@@ -40,7 +40,7 @@ class JavaConventionsTest {
 
         assertEquals(25, compileToolchainVersion(), "-Pjdk.version overrides the jdkVersion knob")
         assertEquals(17, releaseOf("compileJava"), "--release stays on minJavaVersion regardless of -P overrides")
-        assertEquals(25, testLauncherVersion(), "-PtestsJdkVersion overrides the test launcher")
+        assertEquals(25, testLauncherVersion(), "-Ptests.jdk.version overrides the test launcher")
     }
 
     @JupiterTest

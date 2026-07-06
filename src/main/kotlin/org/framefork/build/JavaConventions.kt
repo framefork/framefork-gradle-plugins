@@ -19,7 +19,7 @@ import org.gradle.kotlin.dsl.withType
  * project's build script runs), each resolvable to a modern JDK independently:
  *  - **compile toolchain** = `jdkVersion` (overridable via `-Pjdk.version`) — what the compiler *runs on*;
  *  - **bytecode target** = `minJavaVersion` — `--release` on every `JavaCompile`, so output stays portable to every test JDK;
- *  - **test-runtime launcher** = `testsJdkVersion` (overridable via `-PtestsJdkVersion`, defaulting to the resolved compile toolchain) — compile-once-test-many.
+ *  - **test-runtime launcher** = `testsJdkVersion` (overridable via `-Ptests.jdk.version`, defaulting to the resolved compile toolchain) — compile-once-test-many.
  *
  * Everything is wired through lazy Providers (never `.get()` at configuration time) so it stays configuration-cache-safe.
  */
@@ -30,8 +30,8 @@ internal fun Project.configureJavaConventions() {
 
     // Resolved compile toolchain: -Pjdk.version wins over the framefork { jdkVersion } knob.
     val resolvedJdkVersion: Provider<Int> = providers.gradleProperty("jdk.version").map(String::toInt).orElse(ext.jdkVersion)
-    // Resolved test-runtime JDK: -PtestsJdkVersion, else the framefork { testsJdkVersion } knob, else the resolved compile toolchain.
-    val resolvedTestsJdkVersion: Provider<Int> = providers.gradleProperty("testsJdkVersion").map(String::toInt)
+    // Resolved test-runtime JDK: -Ptests.jdk.version, else the framefork { testsJdkVersion } knob, else the resolved compile toolchain.
+    val resolvedTestsJdkVersion: Provider<Int> = providers.gradleProperty("tests.jdk.version").map(String::toInt)
         .orElse(ext.testsJdkVersion)
         .orElse(resolvedJdkVersion)
 

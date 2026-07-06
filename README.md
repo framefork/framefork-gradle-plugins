@@ -31,7 +31,7 @@ plugins {
 framefork {
     minJavaVersion = 17    // --release bytecode target (the minimum Java a consumer needs)
     jdkVersion = 21        // compile/build toolchain (>= 21); override per-invocation with -Pjdk.version
-    // testsJdkVersion = 21 // test-runtime JDK; defaults to the resolved jdkVersion; override with -PtestsJdkVersion
+    // testsJdkVersion = 21 // test-runtime JDK; defaults to the resolved jdkVersion; override with -Ptests.jdk.version
     // jspecifyMode = true  // NullAway JSpecify mode (default on)
 }
 ```
@@ -60,10 +60,10 @@ That's the whole consumer surface. No error-prone/nullaway/jspecify versions, no
 | --- | --- | --- |
 | `minJavaVersion` | `17` | `--release` bytecode target — the minimum Java a consumer of the library needs. |
 | `jdkVersion` | `21` | The JDK the compiler runs on (must be ≥ 21 for Error Prone). Overridable with `-Pjdk.version=NN`. |
-| `testsJdkVersion` | = resolved `jdkVersion` | The JDK the tests execute on. Overridable with `-PtestsJdkVersion=NN`. |
+| `testsJdkVersion` | = resolved `jdkVersion` | The JDK the tests execute on. Overridable with `-Ptests.jdk.version=NN`. |
 | `jspecifyMode` | `true` | Whether NullAway runs in JSpecify generics mode. |
 
-Compilation always runs on a modern `jdkVersion` (so current Error Prone works) and emits `--release minJavaVersion` bytecode, so the same artifact is portable across JDKs. Testing across multiple JDKs is a CI-matrix concern — set `-PtestsJdkVersion` per matrix cell; the plugin models a single scalar, not a list.
+Compilation always runs on a modern `jdkVersion` (so current Error Prone works) and emits `--release minJavaVersion` bytecode, so the same artifact is portable across JDKs. Testing across multiple JDKs is a CI-matrix concern — set `-Ptests.jdk.version` per matrix cell; the plugin models a single scalar, not a list.
 
 ## Requirements
 

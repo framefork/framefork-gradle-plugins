@@ -24,10 +24,10 @@ class LibraryPluginFunctionalTest {
     }
 
     @Test
-    fun `-PtestsJdkVersion switches only the test-runtime launcher`() {
+    fun `the tests_jdk_version property switches only the test-runtime launcher`() {
         writeConsumerProject()
 
-        val result = runner(":foo:frameforkProbe", "-PtestsJdkVersion=25").build()
+        val result = runner(":foo:frameforkProbe", "-Ptests.jdk.version=25").build()
 
         assertTrue(result.output.contains("PROBE release=17"), result.output)
         assertTrue(result.output.contains("PROBE compileJdk=21"), result.output)
