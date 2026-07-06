@@ -8,12 +8,8 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        google()
+        gradlePluginPortal()
     }
-
-    // should auto-pickup the 'libs.versions.toml'
 }
 
-rootProject.name = "framefork-build"
-
-include(":conventions")
+rootProject.name = "framefork-gradle-plugins"

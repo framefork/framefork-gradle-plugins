@@ -1,21 +1,12 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.pluginPublish) apply false
-    alias(libs.plugins.versionCheck)
-    id("idea")
+    `kotlin-dsl`
+    `java-gradle-plugin`
+    `maven-publish`
+    alias(libs.plugins.pluginPublish)
 }
 
-allprojects {
-    group = "org.framefork.build"
-    version = "0.0.1-SNAPSHOT"
-}
-
-idea {
-    module {
-        isDownloadJavadoc = true
-        isDownloadSources = true
-    }
-}
+group = "org.framefork.build"
+version = "0.1.0-SNAPSHOT"
 
 tasks.withType<Wrapper> {
     distributionType = Wrapper.DistributionType.ALL
