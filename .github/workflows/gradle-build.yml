@@ -18,6 +18,12 @@ jobs:
       matrix:
         jdk: [21, 25]
         testedGradleVersion: ["", "9.0"]
+        exclude:
+          # Gradle 9.0 cannot run on JDK 25 (JDK 25 postdates it), so the TestKit-spawned 9.0
+          # builds fail there. The 9.0 consumer-baseline replay only needs a JDK that 9.0
+          # supports, which the JDK 21 cell already covers; the JDK 25 cell tests current Gradle.
+          - jdk: 25
+            testedGradleVersion: "9.0"
     steps:
       - uses: actions/checkout@v4
 
