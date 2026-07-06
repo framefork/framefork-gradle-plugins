@@ -1,6 +1,5 @@
 package org.framefork.build
 
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -76,7 +75,7 @@ class PluginResolutionFunctionalTest {
             """.trimIndent(),
         )
 
-        val result = GradleRunner.create()
+        val result = frameforkRunner()
             .withProjectDir(consumerDir)
             // --refresh-dependencies so a re-run always sees the just-published SNAPSHOT rather than a cached one.
             .withArguments(":foo:frameforkApplied", "--refresh-dependencies", "--stacktrace")

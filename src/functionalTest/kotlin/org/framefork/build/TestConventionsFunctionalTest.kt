@@ -76,7 +76,7 @@ class TestConventionsFunctionalTest {
     }
 
     private fun runner(vararg args: String): GradleRunner =
-        GradleRunner.create()
+        frameforkRunner()
             .withProjectDir(projectDir)
             .withPluginClasspath()
             .withArguments(*args, "--configuration-cache", "--stacktrace")

@@ -85,6 +85,9 @@ val functionalTestTask = tasks.register<Test>("functionalTest") {
     dependsOn("publishAllPublicationsToLocalPluginRepository")
     systemProperty("framefork.localPluginRepo", localPluginRepoDir.get().asFile.absolutePath)
     systemProperty("framefork.pluginVersion", version.toString())
+
+    // Empty ⇒ TestKit's embedded/current Gradle; `-PtestedGradleVersion=9.0` replays the whole suite against the consumer baseline.
+    systemProperty("framefork.testedGradleVersion", providers.gradleProperty("testedGradleVersion").orNull ?: "")
 }
 
 tasks.withType<Test>().configureEach {

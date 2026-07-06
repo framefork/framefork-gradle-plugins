@@ -1,6 +1,5 @@
 package org.framefork.build
 
-import org.gradle.testkit.runner.GradleRunner
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -53,7 +52,7 @@ class FrameforkSettingsPluginFunctionalTest {
             """.trimIndent(),
         )
 
-        val result = GradleRunner.create()
+        val result = frameforkRunner()
             .withProjectDir(projectDir)
             .withPluginClasspath()
             .withArguments(":foo:printFramefork", "--configuration-cache", "--stacktrace")
@@ -95,7 +94,7 @@ class FrameforkSettingsPluginFunctionalTest {
             """.trimIndent(),
         )
 
-        val result = GradleRunner.create()
+        val result = frameforkRunner()
             .withProjectDir(projectDir)
             .withPluginClasspath()
             .withArguments(":bar:printFramefork", "--stacktrace")
