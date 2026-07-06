@@ -81,6 +81,49 @@ class StaticAnalysisFunctionalTest {
     }
 
     @Test
+    fun `a source root added later in the module build script is covered by @NullMarked generation`() {
+        writeConsumerProject()
+        // A consumer grafts an extra source root in its own build script — which runs after the plugin's apply() — so a
+        // snapshot taken during apply() would miss it. The generator must derive its roots lazily and still cover it.
+        write(
+            "modules/foo/build.gradle.kts",
+            """
+            plugins {
+                id("org.framefork.build.library-published")
+            }
+
+            sourceSets.main {
+                java.srcDir("src/generated-api/java")
+            }
+            """.trimIndent(),
+        )
+        write(
+            "modules/foo/src/generated-api/java/api/Api.java",
+            """
+            package api;
+
+            public final class Api {
+
+                private Api() {
+                }
+
+                public static String name() {
+                    return "api";
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = runner(":foo:compileJava").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":foo:compileJava")?.outcome, result.output)
+        val generated = projectDir.resolve("modules/foo/build/generated/sources/framefork-nullmarked/java/main/api/package-info.java")
+        assertTrue(generated.isFile, "expected a generated package-info for the late-added source root at $generated")
+        assertTrue(generated.readText().contains("@NullMarked"), generated.readText())
+        assertTrue(generated.readText().contains("package api;"), generated.readText())
+    }
+
+    @Test
     fun `a consumer build is configuration-cache clean across store and reuse`() {
         writeConsumerProject()
         write(

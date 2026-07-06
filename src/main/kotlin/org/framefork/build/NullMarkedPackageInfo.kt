@@ -98,14 +98,19 @@ internal fun Project.configureNullMarkedPackageInfoGeneration() {
     val sourceSets = extensions.getByType<SourceSetContainer>()
     val main = sourceSets.getByName("main")
 
-    // Snapshot the hand-written source roots BEFORE the generated dir is grafted onto `main`, so the task never treats
-    // its own output directory as an input (which would make it self-referential and never up-to-date).
-    val handWrittenSourceRoots = main.java.srcDirs.toSet()
+    val outputDir = layout.buildDirectory.dir("generated/sources/framefork-nullmarked/java/main")
 
     val generateTask = tasks.register<GenerateNullMarkedPackageInfoTask>("generateNullMarkedPackageInfo") {
         description = "Generates JSpecify @NullMarked package-info.java files for every package of the main source set."
-        sourceRoots.from(handWrittenSourceRoots)
-        outputDirectory.convention(layout.buildDirectory.dir("generated/sources/framefork-nullmarked/java/main"))
+        // Derive the roots lazily so a source dir a consumer adds later in its build script (module scripts run after
+        // apply()) is still covered — an eager srcDirs snapshot taken here would miss it, silently letting its packages
+        // escape @NullMarked and NullAway's onlyNullMarked check. Reading `main.java.srcDirs` through a plain provider
+        // (not the live `sourceDirectories` FileCollection) resolves the roots lazily while carrying no build
+        // dependency, so the generator's own output dir — grafted onto `main` below — does not create a self-referential
+        // circular task dependency. That output dir is filtered out by value so it is never treated as an input root.
+        val ownOutputDir = outputDir.get().asFile
+        sourceRoots.from(providers.provider { main.java.srcDirs.filter { it != ownOutputDir } })
+        outputDirectory.convention(outputDir)
     }
 
     // Using the task provider registers compileJava's dependency on it and adds the output dir as a generated Java root.
