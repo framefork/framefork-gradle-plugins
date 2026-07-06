@@ -80,6 +80,12 @@ Compilation always runs on a modern `jdkVersion` (so current Error Prone works) 
 
 To try an unreleased version against a real consumer without publishing, `publishToMavenLocal` here and add `mavenLocal()` to the consumer's `pluginManagement.repositories`.
 
+## Documentation
+
+- [Troubleshooting](docs/troubleshooting.md) — common adoption failures (annotation-library `-Werror` breaks, JDK-knob errors, doclint, Kotlin, dependency locking) and their fixes.
+- [Design decisions](docs/design-decisions.md) — why the suite is built the way it is (distribution, structure, the JDK model, the strictness stack, config-cache safety).
+- [Contributing](CONTRIBUTING.md) — building, testing, the codebase map, and the invariants a change must preserve.
+
 ## Releasing
 
 Releases go to **Maven Central** via [JReleaser](https://jreleaser.org/), driven by the `jreleaser-release` GitHub Actions workflow. You trigger the workflow and then write the changelog; everything else runs in CI. Each step below says exactly what to run and how to confirm it worked, so either a person or an automated agent can follow it without prior context.
