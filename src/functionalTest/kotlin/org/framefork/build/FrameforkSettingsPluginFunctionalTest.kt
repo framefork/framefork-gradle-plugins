@@ -105,6 +105,43 @@ class FrameforkSettingsPluginFunctionalTest {
         assertTrue(result.output.contains("FRAMEFORK jspecifyMode=true"), result.output)
     }
 
+    @Test
+    fun `per-project knobs are locked against module-level overrides`() {
+        writeSettings(
+            """
+            plugins {
+                id("org.framefork.build")
+            }
+
+            framefork {
+                minJavaVersion = 17
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        write("build.gradle.kts", "")
+
+        // A module script running after the plugin apply tries to override the propagated knob. The settings
+        // `framefork {}` block is the single parametrization surface, so this write must fail loudly rather than
+        // silently diverge — FrameforkProjectInitAction calls disallowChanges() on every knob.
+        write(
+            "modules/foo/build.gradle.kts",
+            """
+            val ext = extensions.getByType(org.framefork.build.FrameforkProjectExtension::class.java)
+            ext.minJavaVersion.set(11)
+            """.trimIndent(),
+        )
+
+        val result = frameforkRunner()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments(":foo:help", "--configuration-cache", "--stacktrace")
+            .buildAndFail()
+
+        assertTrue(result.output.contains("cannot be changed any further"), result.output)
+    }
+
     private fun writeSettings(content: String) = write("settings.gradle.kts", content)
 
     private fun write(relativePath: String, content: String) {

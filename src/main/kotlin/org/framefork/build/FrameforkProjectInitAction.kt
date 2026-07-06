@@ -22,13 +22,22 @@ class FrameforkProjectInitAction(
 
     override fun execute(project: Project) {
         val extension = project.extensions.create("frameforkProject", FrameforkProjectExtension::class.java)
+        // Lock each knob right after seeding it: the settings-level `framefork {}` block is the single parametrization
+        // surface, so a module's build script must not `frameforkProject.minJavaVersion.set(...)` and silently diverge.
+        // disallowChanges() forbids later writes without forcing eager resolution (unlike finalizeValue), so an unset
+        // testsJdkVersion still falls back through the `.orElse` chain in JavaConventions rather than being pinned here.
         extension.minJavaVersion.set(minJavaVersion)
+        extension.minJavaVersion.disallowChanges()
         extension.jdkVersion.set(jdkVersion)
+        extension.jdkVersion.disallowChanges()
         if (testsJdkVersion != null) {
             extension.testsJdkVersion.set(testsJdkVersion)
         }
+        extension.testsJdkVersion.disallowChanges()
         extension.jspecifyMode.set(jspecifyMode)
+        extension.jspecifyMode.disallowChanges()
         extension.dependencyLocking.set(dependencyLocking)
+        extension.dependencyLocking.disallowChanges()
 
         // The staging-wipe task belongs on the root project: every published module's `publish` depends on it (by path)
         // so a `publish` run starts from an empty `build/staging-deploy` regardless of which modules take part. It is
