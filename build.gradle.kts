@@ -30,6 +30,13 @@ gradlePlugin {
             description = "Convention plugin (applied version-less) for a non-published testing/ module: identical to library-published " +
                 "minus publishing — Java toolchain and --release conventions, Error Prone + NullAway + JSpecify strictness, and JUnit 5 + test-logger."
         }
+        register("frameforkAutoService") {
+            id = "org.framefork.build.auto-service"
+            implementationClass = "org.framefork.build.AutoServicePlugin"
+            displayName = "Framefork Build — auto-service wiring"
+            description = "Per-module feature plugin (applied version-less) for a module whose classes carry @AutoService: wires the Google " +
+                "auto-service annotation (compileOnly) and its annotation processor (annotationProcessor). Apply it alongside a library-* plugin."
+        }
     }
 }
 

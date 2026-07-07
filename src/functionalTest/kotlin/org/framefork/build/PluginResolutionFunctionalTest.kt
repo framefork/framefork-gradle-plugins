@@ -85,6 +85,59 @@ class PluginResolutionFunctionalTest {
         assertTrue(result.output.contains("FRAMEFORK library-published applied=true"), result.output)
     }
 
+    @Test
+    fun `the auto-service feature plugin also resolves version-less from the published markers`() {
+        val repoUri = File(pluginRepo).toURI()
+
+        write(
+            "settings.gradle.kts",
+            """
+            pluginManagement {
+                repositories {
+                    maven { url = uri("$repoUri") }
+                    gradlePluginPortal()
+                    mavenCentral()
+                }
+            }
+
+            plugins {
+                id("org.framefork.build") version "$pluginVersion"
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        write("build.gradle.kts", "")
+
+        // Both the library plugin and the feature plugin are applied without a version; the feature plugin can only
+        // resolve because the settings plugin (from its published marker) put the whole suite jar on the settings
+        // buildscript classpath — the same classpath-injection mechanism, exercised for the new marker artifact.
+        write(
+            "modules/foo/build.gradle.kts",
+            """
+            plugins {
+                id("org.framefork.build.library-published")
+                id("org.framefork.build.auto-service")
+            }
+
+            val applied = plugins.hasPlugin("org.framefork.build.auto-service")
+            tasks.register("frameforkAutoServiceApplied") {
+                doLast {
+                    println("FRAMEFORK auto-service applied=" + applied)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = frameforkRunner()
+            .withProjectDir(consumerDir)
+            .withArguments(":foo:frameforkAutoServiceApplied", "--refresh-dependencies", "--stacktrace")
+            .build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":foo:frameforkAutoServiceApplied")?.outcome, result.output)
+        assertTrue(result.output.contains("FRAMEFORK auto-service applied=true"), result.output)
+    }
+
     private fun write(relativePath: String, content: String) {
         val file = consumerDir.resolve(relativePath)
         file.parentFile.mkdirs()

@@ -52,7 +52,17 @@ plugins {
 }
 ```
 
-That's the whole consumer surface. No error-prone/nullaway/jspecify versions, no `buildSrc`, no repeated toolchain wiring.
+A module whose classes carry Google [`@AutoService`](https://github.com/google/auto/tree/main/service) adds the version-less `org.framefork.build.auto-service` feature plugin **after** its `library-*` plugin; it wires the annotation (`compileOnly`) and its processor (`annotationProcessor`) with no versions:
+
+```kotlin
+// modules/foo/build.gradle.kts — a module that registers services via @AutoService
+plugins {
+    id("org.framefork.build.library-published")
+    id("org.framefork.build.auto-service")
+}
+```
+
+That's the whole consumer surface. No error-prone/nullaway/jspecify/auto-service versions, no `buildSrc`, no repeated toolchain wiring.
 
 ## The `framefork { }` knobs
 

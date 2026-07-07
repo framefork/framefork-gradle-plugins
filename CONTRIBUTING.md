@@ -24,16 +24,17 @@ Everything is **binary Kotlin** under `src/main/kotlin/org/framefork/build/` —
 | `FrameforkSettingsPlugin.kt` | The `org.framefork.build` settings plugin: injects repos, discovers `modules/` + `testing/` subprojects, registers the `framefork {}` extension, and propagates resolved knobs to every project via `gradle.lifecycle.beforeProject(IsolatedAction)`. |
 | `FrameforkExtension` / `FrameforkProjectExtension` / `FrameforkProjectInitAction` | The settings-level knobs, their per-project mirror, and the CC-safe (scalar-only) propagation action. |
 | `LibraryPublishedPlugin` / `LibraryInternalPlugin` | The two version-less convention plugins a consumer applies per module. |
+| `AutoServicePlugin` / `AutoServiceConventions.kt` | The version-less per-module feature plugin (`auto-service`) and its `configureAutoService()` helper: wires Google auto-service's annotation + processor onto a `library-*` module. |
 | `LibraryConventions.kt` | `configureLibraryBaseConventions()` — the shared composition; `library-internal` == base, `library-published` == base + publishing. |
 | `JavaConventions` · `StaticAnalysisConventions` · `NullMarkedPackageInfo` · `TestConventions` · `KotlinConventions` · `PublishConventions` · `DependencyLockingConventions` | The private `internal fun Project.…()` helpers each library plugin composes. |
 | `Accessors.kt` | `frameforkProjectExtension()` — the one guarded accessor for the per-project extension. |
-| `build.gradle.kts` | Registers the three plugin IDs, pins the external plugin versions (errorprone/nullaway/test-logger/kotlin), and configures publishing (POM on all publications incl. markers). |
+| `build.gradle.kts` | Registers the four plugin IDs, pins the external plugin versions (errorprone/nullaway/test-logger/kotlin), and configures publishing (POM on all publications incl. markers). |
 
 ## Invariants a change must preserve
 
 1. **Configuration-cache-safe.** No `afterEvaluate` (the single exception in `configureStagingPublishing` is commented as such), no `allprojects`/`subprojects`, `IsolatedAction`s capture only plain data, filesystem reads go through a `ValueSource`, and task classes capture no `Project`. The functional tests run inner builds with `--configuration-cache-problems=fail` — keep them green.
 2. **All-binary Kotlin.** Don't introduce precompiled script plugins.
-3. **A plugin ID exists only if a consumer applies it.** There are exactly three registered IDs; all other logic is `internal` helper functions, not applyable plugins.
+3. **A plugin ID exists only if a consumer applies it.** The registered IDs are the settings plugin, the two `library-*` convention plugins, and the `auto-service` per-module feature plugin; all other logic is `internal` helper functions, not applyable plugins.
 4. **Versions have one home.** Tool versions the plugin *injects into consumers* are `const` objects (e.g. `StaticAnalysisVersions`); the *plugin's own* external-plugin versions live in `build.gradle.kts` / `gradle/libs.versions.toml`.
 5. **`library-internal` == `library-published` minus publishing, by construction** — both compose `configureLibraryBaseConventions()`; don't hand-repeat the sequence.
 6. Read the per-project extension only through `frameforkProjectExtension()` (keeps the missing-settings-plugin error message in one place).

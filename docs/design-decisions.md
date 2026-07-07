@@ -16,10 +16,11 @@ Every Framefork library repo used to copy-paste the same `framefork.java` / `fra
 
 ## 3. Structure — a settings plugin plus version-less convention plugins
 
-Exactly **three public plugin IDs** — the rule is "an ID exists only if a consumer applies it":
+**Public plugin IDs** — the rule is "an ID exists only if a consumer applies it":
 - `org.framefork.build` — the settings plugin, applied **with a version** in `settings.gradle.kts`.
 - `org.framefork.build.library-published` — a published library module (**version-less**).
 - `org.framefork.build.library-internal` — a non-published `testing/` module (version-less; identical to `library-published` **minus publishing**).
+- `org.framefork.build.auto-service` — a version-less per-module *feature* plugin, distinct from the whole-module `library-*` conventions (see §14).
 
 **The classpath-injection crux (why version-less works):** when the consumer applies `org.framefork.build` with a version, its implementation JAR lands on the *settings buildscript classpath*, which is the **parent classloader of every project build script** (same mechanism as `buildSrc`). So the `library-*` plugins are already on the classpath and apply without a version — specifying one *errors*. The non-negotiable prerequisite: **one published JAR** containing the settings plugin and both convention plugins as a single Gradle project.
 
@@ -90,6 +91,14 @@ Every consumer's root `build.gradle.kts` used to copy-paste the same housekeepin
 - **Why not `mustRunAfter`**: it only orders tasks that are both in the task graph, so running a subset (`:a:test` alone) or having up-to-date tasks silently breaks the chain. A shared service is mutual exclusion enforced by the scheduler regardless of which tasks run, and it's the official CC-safe API for shared-resource constraints.
 - **The contract is mutual exclusion, not ordering.** There is no deterministic cross-module run order — a test must not assume it runs before or after any other module's tests, only that two test JVMs never overlap.
 - **Wired on the settings→project rails, not in a library convention helper.** The wiring lives in `FrameforkProjectInitAction` (the `beforeProject` `IsolatedAction`) because it may touch only `gradle.sharedServices` + *this* project's own tasks — Isolated-Projects-legal — and `registerIfAbsent` is idempotent by name across every project's visit. Registration happens only when the knob is on, so the everyday default-off build registers nothing.
+
+## 14. Per-module capabilities are plugin IDs, not `framefork {}` knobs
+
+Some capabilities apply to *a* module, not the whole build — e.g. Google auto-service, which only the modules that ship `@AutoService`-annotated classes need (a Hibernate `TypeContributor`, a service SPI), and which costs an annotation processor everywhere it's wired. The `framefork {}` extension is the wrong home for these: it's a **build-wide** switch propagated to every project (§4), and per-module divergence is deliberately unsupported there (values are `disallowChanges`-locked). A per-module capability is instead its own **version-less plugin id** the module opts into in its own `plugins {}` block — `org.framefork.build.auto-service` — riding the same classpath-injection rails (§3) as the `library-*` plugins.
+
+- **Feature plugin, not a convention plugin.** It wires exactly its one capability (`compileOnly` annotation + `annotationProcessor`) and composes with a `library-*` plugin rather than replacing it. It is **not** part of `configureLibraryBaseConventions()` — folding it in would tax every module for a processor few need.
+- **Fails loud on a standalone apply.** The two dependencies attach to the `compileOnly` / `annotationProcessor` configurations, which exist only once a `java` plugin is applied — and the `library-*` plugins are what apply `java-library`. Applied to a module with no java plugin there is nothing to attach to; rather than a silent no-op (or a cryptic `UnknownConfigurationException`), `configureAutoService()` `require`s the java plugin with a message naming the fix. This makes the feature plugin **apply-order-sensitive**: the `library-*` plugin must be listed first. A CC-safe, `afterEvaluate`-free eager check is preferred over reacting to the java plugin via `withPlugin`, because the "standalone apply is a consumer error" signal is worth more than order-independence for a plugin whose whole purpose is to sit next to a `library-*` one.
+- **The processor coexists with Error Prone.** javac runs all annotation processors in a single round, so the auto-service processor and the Error Prone processor the strictness stack registers run together with no special ordering — the functional test builds the jar under the full strictness stack and asserts the generated `META-INF/services/*` entry to prove it.
 
 ## Reference implementations mirrored
 
