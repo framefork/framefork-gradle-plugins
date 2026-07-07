@@ -30,8 +30,8 @@ class SequentialTestsFunctionalTest {
     }
 
     @Test
-    fun `sequentialTests registers the one-permit test-serializer shared service`() {
-        writeConsumer(sequentialTests = true)
+    fun `the opt-out default (no knob) registers the one-permit test-serializer shared service`() {
+        writeConsumer(sequentialTests = null)
 
         val result = runner(":printSharedServices").build()
 
@@ -39,7 +39,7 @@ class SequentialTestsFunctionalTest {
     }
 
     @Test
-    fun `without the knob no test-serializer service is registered`() {
+    fun `sequentialTests = false opts out and registers no test-serializer service`() {
         writeConsumer(sequentialTests = false)
 
         val result = runner(":printSharedServices").build()
@@ -69,8 +69,11 @@ class SequentialTestsFunctionalTest {
             .withPluginClasspath()
             .withArguments(*args, "--configuration-cache", "--stacktrace")
 
-    private fun writeConsumer(sequentialTests: Boolean) {
-        val toggle = if (sequentialTests) "sequentialTests = true" else ""
+    private fun writeConsumer(sequentialTests: Boolean?) {
+        val toggle = when (sequentialTests) {
+            null -> "" // omit the knob entirely, exercising the opt-out default
+            else -> "sequentialTests = $sequentialTests"
+        }
         write(
             "settings.gradle.kts",
             """

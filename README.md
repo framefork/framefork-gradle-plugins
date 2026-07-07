@@ -72,7 +72,7 @@ That's the whole consumer surface. No error-prone/nullaway/jspecify/auto-service
 | `jdkVersion` | `21` | The JDK the compiler runs on (must be ≥ 21 for Error Prone). Overridable with `-Pjdk.version=NN`. |
 | `testsJdkVersion` | = resolved `jdkVersion` | The JDK the tests execute on. Overridable with `-Ptests.jdk.version=NN`. |
 | `jspecifyMode` | `true` | Whether NullAway runs in JSpecify generics mode. |
-| `sequentialTests` | `false` | Run at most one test JVM at a time across all modules — mutual exclusion, not ordering. |
+| `sequentialTests` | `true` | Run at most one test JVM at a time across all modules — mutual exclusion, not ordering. Set to `false` to let test JVMs run in parallel across modules. |
 | `dependencyLocking` | `false` | Lock all configurations (LockMode `DEFAULT`) and provide the `resolveAndLockAll` maintenance task — see [Troubleshooting](docs/troubleshooting.md#dependency-locking). |
 
 Compilation always runs on a modern `jdkVersion` (so current Error Prone works) and emits `--release minJavaVersion` bytecode, so the same artifact is portable across JDKs. Testing across multiple JDKs is a CI-matrix concern — set `-Ptests.jdk.version` per matrix cell; the plugin models a single scalar, not a list.

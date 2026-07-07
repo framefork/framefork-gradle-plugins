@@ -27,7 +27,8 @@ abstract class FrameforkExtension {
 
     /**
      * Whether all `Test` tasks across the whole build run mutually exclusively — at most one test JVM at a time — while
-     * everything else stays parallel. Off by default. The guarantee is mutual exclusion, **not** ordering (see
+     * everything else stays parallel. On by default (opt-out — set to `false` to let test JVMs run in parallel across
+     * modules). The guarantee is mutual exclusion, **not** ordering (see
      * [FrameforkProjectInitAction] / docs/design-decisions.md §13).
      */
     abstract val sequentialTests: Property<Boolean>
@@ -37,6 +38,6 @@ abstract class FrameforkExtension {
         jdkVersion.convention(21)
         jspecifyMode.convention(true)
         dependencyLocking.convention(false)
-        sequentialTests.convention(false)
+        sequentialTests.convention(true)
     }
 }
