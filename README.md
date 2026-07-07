@@ -73,12 +73,13 @@ That's the whole consumer surface. No error-prone/nullaway/jspecify/auto-service
 | `testsJdkVersion` | = resolved `jdkVersion` | The JDK the tests execute on. Overridable with `-Ptests.jdk.version=NN`. |
 | `jspecifyMode` | `true` | Whether NullAway runs in JSpecify generics mode. |
 | `sequentialTests` | `false` | Run at most one test JVM at a time across all modules — mutual exclusion, not ordering. |
+| `dependencyLocking` | `false` | Lock all configurations (LockMode `DEFAULT`) and provide the `resolveAndLockAll` maintenance task — see [Troubleshooting](docs/troubleshooting.md#dependency-locking). |
 
 Compilation always runs on a modern `jdkVersion` (so current Error Prone works) and emits `--release minJavaVersion` bytecode, so the same artifact is portable across JDKs. Testing across multiple JDKs is a CI-matrix concern — set `-Ptests.jdk.version` per matrix cell; the plugin models a single scalar, not a list.
 
 ## Requirements
 
-- **Gradle 9.0+** on the consumer side.
+- **Gradle 9.0+** on the consumer side, with the **Gradle daemon running on JDK 21+** — the plugin's module metadata requires a 21+ JVM to resolve at all (on CI, keep a 21+ JDK as the last `setup-java` entry so it becomes the default `JAVA_HOME`).
 - A JDK ≥ 21 available as a toolchain (plus whatever `testsJdkVersion` you target).
 
 ## Building this repo

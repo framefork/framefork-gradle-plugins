@@ -46,6 +46,10 @@ Locking is opt-in: set `framefork { dependencyLocking = true }`. Then generate t
 
 `--no-configuration-cache` is required — `resolveAndLockAll` is a maintenance task that resolves configurations at execution time and is intentionally not CC-compatible. It does **not** taint your normal build's config cache. Re-run it (and commit the diff) whenever dependencies change; a CI job that regenerates and `git diff --exit-code`s the lockfiles keeps them honest.
 
+## `Dependency requires at least JVM runtime version 21. This build uses a Java 17 JVM.`
+
+The plugin's published Gradle module metadata declares `org.gradle.jvm.version = 21`, so the **Gradle daemon itself must run on JDK 21+** to even put the plugin on the buildscript classpath — this is independent of `minJavaVersion` and of which JDKs your toolchains/tests use, and it fails before any of your build logic runs. On CI this typically means the `setup-java` step's default `JAVA_HOME` is too old: with a multi-version `java-version:` list, the **last** entry becomes the default the daemon runs on — keep a 21+ JDK last. This has bitten three different workflow types during rollout (build matrices, dependency-submission jobs, anything else that runs `./gradlew`).
+
 ## The plugin won't resolve at all
 
 - Ensure `mavenCentral()` is in `pluginManagement { repositories { … } }` in `settings.gradle.kts` (the plugin and its markers are on Maven Central).
