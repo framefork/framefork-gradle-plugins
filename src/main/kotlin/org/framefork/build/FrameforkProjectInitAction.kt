@@ -4,6 +4,7 @@ import org.gradle.api.IsolatedAction
 import org.gradle.api.Project
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.diagnostics.DependencyReportTask
+import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.wrapper.Wrapper
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
@@ -21,6 +22,7 @@ class FrameforkProjectInitAction(
     private val testsJdkVersion: Int?,
     private val jspecifyMode: Boolean,
     private val dependencyLocking: Boolean,
+    private val sequentialTests: Boolean,
 ) : IsolatedAction<Project> {
 
     override fun execute(project: Project) {
@@ -41,6 +43,23 @@ class FrameforkProjectInitAction(
         extension.jspecifyMode.disallowChanges()
         extension.dependencyLocking.set(dependencyLocking)
         extension.dependencyLocking.disallowChanges()
+        extension.sequentialTests.set(sequentialTests)
+        extension.sequentialTests.disallowChanges()
+
+        // Serialize test execution build-wide when the knob is on: a single-permit shared BuildService acts as a
+        // one-permit semaphore, and every Test task on this project declares usesService() on it, so the scheduler runs
+        // at most one test JVM at a time while everything else stays parallel. This lives on the beforeProject rails (not
+        // a library convention helper) because it must touch only gradle.sharedServices and *this* project's own tasks —
+        // Isolated-Projects-legal — and registerIfAbsent is idempotent by name across every project's visit. The contract
+        // is mutual exclusion, not ordering (see TestSerializerService / docs/design-decisions.md §13).
+        if (sequentialTests) {
+            val testSerializer = project.gradle.sharedServices.registerIfAbsent(TEST_SERIALIZER_SERVICE, TestSerializerService::class.java) {
+                maxParallelUsages.set(1)
+            }
+            project.tasks.withType<Test>().configureEach {
+                usesService(testSerializer)
+            }
+        }
 
         // Version plumbing, absorbing the `allprojects { version = rootProject.version }` boilerplate consumers used to
         // copy-paste. allprojects{} reaches across projects (Isolated-Projects-hostile), so instead every project reads
@@ -87,3 +106,6 @@ internal const val CLEAN_ALL_PUBLICATIONS_TASK = "cleanAllPublications"
 
 /** Per-project dependency-tree report task writing to `build/reports/dependencies.txt`; see [FrameforkProjectInitAction]. */
 internal const val ALL_DEPENDENCIES_TASK = "allDependencies"
+
+/** One-permit shared-service name that serializes `Test` execution when `framefork { sequentialTests }` is on; see [TestSerializerService]. */
+internal const val TEST_SERIALIZER_SERVICE = "frameforkTestSerializer"

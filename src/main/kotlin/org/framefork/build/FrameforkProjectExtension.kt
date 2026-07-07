@@ -19,4 +19,6 @@ abstract class FrameforkProjectExtension {
     abstract val jspecifyMode: Property<Boolean>
 
     abstract val dependencyLocking: Property<Boolean>
+
+    abstract val sequentialTests: Property<Boolean>
 }

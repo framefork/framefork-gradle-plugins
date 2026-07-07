@@ -83,6 +83,14 @@ Every consumer's root `build.gradle.kts` used to copy-paste the same housekeepin
 - **`allDependencies` registered per project, no `evaluationDependsOnChildren()`.** The old task used `evaluationDependsOnChildren()` + the `project-report` plugin to render subprojects. The clean equivalent is a per-project `DependencyReportTask` writing `build/reports/dependencies.txt` — each renders only its own project's dependencies (the task default), so there are no cross-project reads.
 - **Wrapper `distributionType = ALL` is root-only**, wired in the `project === rootProject` branch alongside `cleanAllPublications` (the wrapper task exists only on the root).
 
+## 13. Sequential tests (opt-in) — a one-permit shared service, not a `mustRunAfter` chain
+
+`framefork { sequentialTests }` (default **off**). When on, every `Test` task across the whole consumer build runs mutually exclusively — at most one test JVM at a time — while everything else stays parallel. The mechanism is a no-op shared `BuildService` (`TestSerializerService`) registered with `maxParallelUsages = 1` and declared as `usesService(...)` on every `Test` task: a one-permit semaphore the Gradle scheduler enforces against whatever actually runs.
+
+- **Why not `mustRunAfter`**: it only orders tasks that are both in the task graph, so running a subset (`:a:test` alone) or having up-to-date tasks silently breaks the chain. A shared service is mutual exclusion enforced by the scheduler regardless of which tasks run, and it's the official CC-safe API for shared-resource constraints.
+- **The contract is mutual exclusion, not ordering.** There is no deterministic cross-module run order — a test must not assume it runs before or after any other module's tests, only that two test JVMs never overlap.
+- **Wired on the settings→project rails, not in a library convention helper.** The wiring lives in `FrameforkProjectInitAction` (the `beforeProject` `IsolatedAction`) because it may touch only `gradle.sharedServices` + *this* project's own tasks — Isolated-Projects-legal — and `registerIfAbsent` is idempotent by name across every project's visit. Registration happens only when the knob is on, so the everyday default-off build registers nothing.
+
 ## Reference implementations mirrored
 
 Hiero `org.hiero.gradle.*` (settings-plugin + classpath injection + module tiers), Palantir Baseline (`javaVersions` DSL split), vanniktech `maven-publish` (publishing DSL idioms), GradleX build-parameters / reproducible-builds, and jjohannes/idiomatic-gradle.

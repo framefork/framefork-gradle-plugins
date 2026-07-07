@@ -36,6 +36,7 @@ abstract class FrameforkSettingsPlugin : Plugin<Settings> {
                     testsJdkVersion = extension.testsJdkVersion.orNull,
                     jspecifyMode = extension.jspecifyMode.get(),
                     dependencyLocking = extension.dependencyLocking.get(),
+                    sequentialTests = extension.sequentialTests.get(),
                 ),
             )
         }

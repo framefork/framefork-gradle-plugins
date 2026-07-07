@@ -25,10 +25,18 @@ abstract class FrameforkExtension {
     /** Whether every module locks its dependencies (Gradle lockfiles). Off by default — not every consumer wants lockfiles. */
     abstract val dependencyLocking: Property<Boolean>
 
+    /**
+     * Whether all `Test` tasks across the whole build run mutually exclusively — at most one test JVM at a time — while
+     * everything else stays parallel. Off by default. The guarantee is mutual exclusion, **not** ordering (see
+     * [FrameforkProjectInitAction] / docs/design-decisions.md §13).
+     */
+    abstract val sequentialTests: Property<Boolean>
+
     init {
         minJavaVersion.convention(17)
         jdkVersion.convention(21)
         jspecifyMode.convention(true)
         dependencyLocking.convention(false)
+        sequentialTests.convention(false)
     }
 }
