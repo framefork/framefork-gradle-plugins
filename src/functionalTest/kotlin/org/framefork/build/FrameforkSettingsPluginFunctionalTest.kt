@@ -168,6 +168,109 @@ class FrameforkSettingsPluginFunctionalTest {
         assertTrue(result.output.contains("'testing/'"), result.output)
     }
 
+    @Test
+    fun `absorbs root housekeeping - version propagation, allDependencies, wrapper distribution`() {
+        writeSettings(
+            """
+            plugins {
+                id("org.framefork.build")
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        // Trailing whitespace is preserved by java.util.Properties; project.version must come out trimmed.
+        write("gradle.properties", "version=1.2.3-TEST   \n")
+
+        // The root build script runs after beforeProject, so it observes the propagated version and the
+        // ALL-configured wrapper the plugin wired in.
+        write(
+            "build.gradle.kts",
+            """
+            tasks.register("printRoot") {
+                // Captured as task-local vals (plain scalars) so the doLast action stays configuration-cache-safe.
+                val wrapperDist = tasks.named<Wrapper>("wrapper").get().distributionType
+                val rootVersion = project.version.toString()
+                doLast {
+                    println("ROOT version=" + rootVersion)
+                    println("ROOT wrapperDistribution=" + wrapperDist)
+                }
+            }
+            """.trimIndent(),
+        )
+        write(
+            "modules/foo/build.gradle.kts",
+            """
+            tasks.register("printModule") {
+                val moduleVersion = project.version.toString()
+                doLast {
+                    println("MODULE version=" + moduleVersion)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val arguments = arrayOf(":printRoot", ":foo:printModule", ":allDependencies", ":foo:allDependencies", "--configuration-cache", "--configuration-cache-problems=fail", "--stacktrace")
+
+        val result = frameforkRunner()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments(*arguments)
+            .build()
+
+        // Version flows from gradle.properties into every project (root and module), trimmed.
+        assertTrue(result.output.contains("ROOT version=1.2.3-TEST"), result.output)
+        assertTrue(result.output.contains("MODULE version=1.2.3-TEST"), result.output)
+        // Wrapper distribution type is configured to ALL on the root.
+        assertTrue(result.output.contains("ROOT wrapperDistribution=ALL"), result.output)
+        // allDependencies runs per project and writes its report.
+        assertTrue(result.output.contains("BUILD SUCCESSFUL"), result.output)
+        assertTrue(projectDir.resolve("build/reports/dependencies.txt").isFile, "root allDependencies report should exist")
+        assertTrue(projectDir.resolve("modules/foo/build/reports/dependencies.txt").isFile, "module allDependencies report should exist")
+
+        // CC store then reuse must keep working.
+        val reuse = frameforkRunner()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments(*arguments)
+            .build()
+        assertTrue(reuse.output.contains("Reusing configuration cache") || reuse.output.contains("Configuration cache entry reused"), reuse.output)
+    }
+
+    @Test
+    fun `leaves version untouched when the version property is absent`() {
+        writeSettings(
+            """
+            plugins {
+                id("org.framefork.build")
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        write("build.gradle.kts", "")
+        write(
+            "modules/foo/build.gradle.kts",
+            """
+            tasks.register("printModule") {
+                val moduleVersion = project.version.toString()
+                doLast {
+                    println("MODULE version=" + moduleVersion)
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val result = frameforkRunner()
+            .withProjectDir(projectDir)
+            .withPluginClasspath()
+            .withArguments(":foo:printModule", "--configuration-cache", "--stacktrace")
+            .build()
+
+        // No `version` gradle property ⇒ the plugin leaves Gradle's "unspecified" default rather than crashing.
+        assertTrue(result.output.contains("MODULE version=unspecified"), result.output)
+    }
+
     private fun writeSettings(content: String) = write("settings.gradle.kts", content)
 
     private fun write(relativePath: String, content: String) {

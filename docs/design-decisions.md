@@ -74,6 +74,15 @@ A Kotlin-DSL plugin built on Gradle 9.x emits Kotlin metadata v2, consumable onl
 
 GradleTestKit functional tests (`java-gradle-plugin` + `gradlePlugin.testSourceSets(functionalTest)`). The settings plugin is functional-test-only (Gradle has no `SettingsBuilder`). Cross-Gradle-version replay via `-PtestedGradleVersion`; CC store→reuse asserted with `--configuration-cache-problems=fail`. The classpath-injection crux is proven by `PluginResolutionFunctionalTest`, which publishes the suite to a hermetic `build/` Maven repo and resolves a version-less sub-plugin from the real marker artifacts — deliberately **without** `withPluginClasspath()`.
 
+## 12. Root housekeeping absorbed onto the settings→project rails
+
+Every consumer's root `build.gradle.kts` used to copy-paste the same housekeeping — `version` plumbing, an `allDependencies` report task, and the wrapper distribution type. `FrameforkProjectInitAction` (which already visits every project, including the root, to register `cleanAllPublications`) absorbs it:
+
+- **`version` on every project, not via `allprojects`.** Consumers did `allprojects { version = rootProject.version }`, but `allprojects{}` reaches across projects and is Isolated-Projects-hostile. Instead each project reads the global `version` Gradle property itself (it lives in the root `gradle.properties` and Gradle exposes it to every project), so it's a purely local read — no cross-project access. Trimmed, and left at Gradle's `unspecified` default when the property is absent (never crash a repo that declares no version).
+- **`group` stays consumer-side — deliberately not propagated.** The root build script runs *after* `beforeProject`, so a root-declared `group` is invisible to the init action; and `group` legitimately diverges per module (e.g. a per-module override in a snapshots/testing module). So the plugin propagates `version` but never touches `group` — the consumer's root `group = "…"` (plus any per-module override) remains the single source.
+- **`allDependencies` registered per project, no `evaluationDependsOnChildren()`.** The old task used `evaluationDependsOnChildren()` + the `project-report` plugin to render subprojects. The clean equivalent is a per-project `DependencyReportTask` writing `build/reports/dependencies.txt` — each renders only its own project's dependencies (the task default), so there are no cross-project reads.
+- **Wrapper `distributionType = ALL` is root-only**, wired in the `project === rootProject` branch alongside `cleanAllPublications` (the wrapper task exists only on the root).
+
 ## Reference implementations mirrored
 
 Hiero `org.hiero.gradle.*` (settings-plugin + classpath injection + module tiers), Palantir Baseline (`javaVersions` DSL split), vanniktech `maven-publish` (publishing DSL idioms), GradleX build-parameters / reproducible-builds, and jjohannes/idiomatic-gradle.
