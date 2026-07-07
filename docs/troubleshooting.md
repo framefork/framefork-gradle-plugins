@@ -36,6 +36,14 @@ The plugin **generates** a JSpecify `@NullMarked` `package-info.java` for every 
 
 `org.jetbrains.kotlin.jvm` is applied **only when a module has `.kt`/`.kts` sources under `src/`**. A pure-Java module intentionally gets no Kotlin plugin. Companion Kotlin plugins are on the classpath, so a Kotlin module can apply them **version-less**: `plugins { id("org.framefork.build.library-published"); kotlin("plugin.serialization") }`.
 
+## `@AutoService` on Kotlin classes generates no service entries
+
+`org.framefork.build.auto-service`'s base wiring is javac's `annotationProcessor`, which only processes **Java** sources — so `@AutoService` on a **Kotlin** class registers nothing through it, silently. The plugin warns when a Kotlin module applies `auto-service` but no Kotlin annotation-processing backend:
+
+> `org.framefork.build.auto-service: '<module>' has Kotlin sources but no Kotlin annotation-processing backend (KSP or kapt) is applied …`
+
+Fix: apply a backend alongside `auto-service`. **KSP** is preferred — it needs a version matching your Kotlin (it's not on the suite's classpath): `id("com.google.devtools.ksp") version "<version>"` (e.g. `2.2.21-2.0.5` for the suite's Kotlin 2.2.21). As a fallback, **kapt** resolves version-less off the suite classpath: `kotlin("kapt")`. The plugin then wires the auto-service processor onto whichever it finds, order-independent. Two caveats: the KSP processor (`auto-service-ksp`) does **not** merge hand-written `META-INF/services` files, only classes it processes; and with kapt, never set `keepJavacAnnotationProcessors = true` — it re-runs the processor over the Java sources and duplicates service entries.
+
 ## Dependency locking
 
 Locking is opt-in: set `framefork { dependencyLocking = true }`. Then generate the lockfiles once and commit them:

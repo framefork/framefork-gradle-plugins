@@ -62,6 +62,28 @@ plugins {
 }
 ```
 
+**Kotlin modules** need one thing more. The base wiring is javac's `annotationProcessor`, which only processes **Java** sources — `@AutoService` on a *Kotlin* class generates nothing through it (it fails open, silently). So a Kotlin module also applies a Kotlin annotation-processing backend, and `auto-service` wires the auto-service processor onto whichever one it finds (order-independent). Prefer **KSP** — it needs a version matching your Kotlin (KSP is not on the suite's classpath, unlike the `kotlin("…")` companions):
+
+```kotlin
+// KSP (preferred) — pick the KSP release matching the suite's bundled Kotlin
+plugins {
+    id("org.framefork.build.library-published")
+    id("com.google.devtools.ksp") version "2.2.21-2.0.5"
+    id("org.framefork.build.auto-service")
+}
+```
+
+```kotlin
+// kapt (fallback) — resolves version-less off the suite classpath
+plugins {
+    id("org.framefork.build.library-published")
+    kotlin("kapt")
+    id("org.framefork.build.auto-service")
+}
+```
+
+If a Kotlin module applies `auto-service` but neither backend, the build still succeeds but warns that `@AutoService` on its Kotlin classes registers nothing — see [Troubleshooting](docs/troubleshooting.md#auto-service-on-kotlin-classes-generates-no-service-entries).
+
 That's the whole consumer surface. No error-prone/nullaway/jspecify/auto-service versions, no `buildSrc`, no repeated toolchain wiring.
 
 ## The `framefork { }` knobs

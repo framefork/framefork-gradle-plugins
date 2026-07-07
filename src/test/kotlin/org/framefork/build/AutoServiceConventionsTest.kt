@@ -25,6 +25,28 @@ class AutoServiceConventionsTest {
     }
 
     @JupiterTest
+    fun `wires the kapt processor when kapt is applied before auto-service`() {
+        val project = ProjectBuilder.builder().withProjectDir(projectDir).build()
+        project.plugins.apply("java")
+        project.plugins.apply("org.jetbrains.kotlin.jvm")
+        project.plugins.apply("org.jetbrains.kotlin.kapt")
+        project.plugins.apply(AutoServicePlugin::class.java)
+
+        assertTrue(dependencyNotation(project, "kapt").contains("com.google.auto.service:auto-service:1.1.1"))
+    }
+
+    @JupiterTest
+    fun `wires the kapt processor when kapt is applied after auto-service - the backend wiring is order-independent`() {
+        val project = ProjectBuilder.builder().withProjectDir(projectDir).build()
+        project.plugins.apply("java")
+        project.plugins.apply("org.jetbrains.kotlin.jvm")
+        project.plugins.apply(AutoServicePlugin::class.java)
+        project.plugins.apply("org.jetbrains.kotlin.kapt")
+
+        assertTrue(dependencyNotation(project, "kapt").contains("com.google.auto.service:auto-service:1.1.1"))
+    }
+
+    @JupiterTest
     fun `fails with a clear message when applied to a module without a java plugin`() {
         val project = ProjectBuilder.builder().withProjectDir(projectDir).build()
 

@@ -35,7 +35,8 @@ gradlePlugin {
             implementationClass = "org.framefork.build.AutoServicePlugin"
             displayName = "Framefork Build — auto-service wiring"
             description = "Per-module feature plugin (applied version-less) for a module whose classes carry @AutoService: wires the Google " +
-                "auto-service annotation (compileOnly) and its annotation processor (annotationProcessor). Apply it alongside a library-* plugin."
+                "auto-service annotation (compileOnly) and its annotation processor (annotationProcessor), plus the matching Kotlin backend " +
+                "when KSP or kapt is applied. Apply it alongside a library-* plugin."
         }
     }
 }
