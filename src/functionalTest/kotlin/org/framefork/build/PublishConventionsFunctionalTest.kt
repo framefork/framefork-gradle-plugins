@@ -58,6 +58,44 @@ class PublishConventionsFunctionalTest {
     }
 
     @Test
+    fun `parallel publishToMavenLocal plus publish in one invocation wipes staging once without racing the writes`() {
+        val moduleNames = (1..8).map { "mod$it" }
+        writeMultiModuleConsumerProject(moduleNames)
+
+        // parallel execution is the trigger: the staging-wipe must be ordered before the per-module staging *write*
+        // tasks, not merely before the `publish` lifecycle aggregate, or the wipe races the writes into staging-deploy.
+        write(
+            "gradle.properties",
+            """
+            org.gradle.parallel=true
+            org.gradle.workers.max=8
+            systemProp.maven.repo.local=${projectDir.resolve("local-m2").absolutePath}
+            """.trimIndent(),
+        )
+
+        // seed a stale artifact so the wipe has something to delete (SUCCESS, not UP-TO-DATE) — proving the wipe both
+        // ran and, on the fixed wiring, completed before any staging write races into the same dir.
+        val stale = projectDir.resolve("build/staging-deploy/org/framefork/mod1/9.9.9/mod1-9.9.9.jar")
+        stale.parentFile.mkdirs()
+        stale.writeText("stale")
+
+        val result = runner("publishToMavenLocal", "publish").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":cleanAllPublications")?.outcome, result.output)
+        assertFalse(stale.isFile, "stale staging artifact was wiped before publishing")
+        for (module in moduleNames) {
+            val jar = projectDir.resolve("build/staging-deploy/org/framefork/$module/1.2.3/$module-1.2.3.jar")
+            assertTrue(jar.isFile, "staged jar for $module present: ${jar.parentFile.list()?.toList()}\n${result.output}")
+            // the module's staging write task must be ordered after the shared wipe
+            assertEquals(
+                TaskOutcome.SUCCESS,
+                result.task(":$module:publishMavenStagingPublicationToStagingRepository")?.outcome,
+                result.output,
+            )
+        }
+    }
+
+    @Test
     fun `library-internal has no publish task at all`() {
         writeConsumerProject()
 
@@ -124,6 +162,41 @@ class PublishConventionsFunctionalTest {
             """.trimIndent(),
         )
         write("testing/bar/src/main/java/bar/Bar.java", "package bar;\n\npublic final class Bar {\n}\n")
+    }
+
+    private fun writeMultiModuleConsumerProject(moduleNames: List<String>) {
+        write(
+            "settings.gradle.kts",
+            """
+            plugins {
+                id("org.framefork.build")
+            }
+
+            framefork {
+                minJavaVersion = 17
+                jdkVersion = 21
+            }
+
+            rootProject.name = "consumer"
+            """.trimIndent(),
+        )
+        write("build.gradle.kts", "")
+
+        for (module in moduleNames) {
+            write(
+                "modules/$module/build.gradle.kts",
+                """
+                plugins {
+                    id("org.framefork.build.library-published")
+                }
+
+                group = "org.framefork"
+                version = "1.2.3"
+                description = "The $module module"
+                """.trimIndent(),
+            )
+            write("modules/$module/src/main/java/$module/Api.java", "package $module;\n\npublic final class Api {\n}\n")
+        }
     }
 
     private fun write(relativePath: String, content: String) {

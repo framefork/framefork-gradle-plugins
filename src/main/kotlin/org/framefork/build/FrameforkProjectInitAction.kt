@@ -39,11 +39,11 @@ class FrameforkProjectInitAction(
         extension.dependencyLocking.set(dependencyLocking)
         extension.dependencyLocking.disallowChanges()
 
-        // The staging-wipe task belongs on the root project: every published module's `publish` depends on it (by path)
-        // so a `publish` run starts from an empty `build/staging-deploy` regardless of which modules take part. It is
-        // registered here, as beforeProject visits the root, so it lives on the CC-safe settings→project rails — rather
-        // than being lazily created from whichever published subproject's apply() reaches the root first, which Isolated
-        // Projects forbids as cross-project task-container mutation.
+        // The staging-wipe task belongs on the root project: every published module's staging-repository write task
+        // depends on it (by path) so publishing starts from an empty `build/staging-deploy` regardless of which modules
+        // take part. It is registered here, as beforeProject visits the root, so it lives on the CC-safe settings→project
+        // rails — rather than being lazily created from whichever published subproject's apply() reaches the root first,
+        // which Isolated Projects forbids as cross-project task-container mutation.
         if (project === project.rootProject) {
             project.tasks.register<Delete>(CLEAN_ALL_PUBLICATIONS_TASK) {
                 outputs.upToDateWhen { false }

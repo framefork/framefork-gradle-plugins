@@ -7,8 +7,10 @@ import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.withType
 import java.io.Serializable
 
 /**
@@ -125,13 +127,19 @@ internal fun Project.configureStagingPublishing() {
         }
     }
 
-    // The root `cleanAllPublications` task wipes the shared staging dir once (registered by FrameforkProjectInitAction
-    // when beforeProject visits the root project); every module's `publish` depends on it so a `publish` run always
-    // starts from an empty staging repo regardless of which modules take part. It is referenced by task path — a lazy
-    // reference that defers resolution — rather than by reaching into the root project's task container from this
-    // subproject's apply(), which Isolated Projects forbids as cross-project mutable-state access.
-    tasks.named("publish") {
-        dependsOn(":$CLEAN_ALL_PUBLICATIONS_TASK")
+    // Wipe the shared staging dir once, before any module writes into it. The ordering has to live on the *write*
+    // tasks (`publish…PublicationToStagingRepository`), not on the `publish` lifecycle aggregate: the aggregate only
+    // orders the wipe against itself, leaving the write tasks unordered against it, so with `org.gradle.parallel=true`
+    // a combined `publishToMavenLocal publish` invocation races the wipe against sibling write tasks already writing
+    // into `build/staging-deploy` and the delete fails ("Failed to delete some children"). Each write task depends on
+    // the wipe (dependsOn, not mustRunAfter, so invoking an individual write task directly still gets a wiped dir
+    // first). Scoped to the staging repository only — `publishToMavenLocal` write tasks never touch staging and must
+    // not depend on the wipe. Referenced by task path (a lazy reference) rather than reaching into the root project's
+    // task container, which Isolated Projects forbids as cross-project mutable-state access.
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        if (repository?.name == "staging") {
+            dependsOn(":$CLEAN_ALL_PUBLICATIONS_TASK")
+        }
     }
 }
 
