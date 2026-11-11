@@ -2,18 +2,20 @@ project:
   vendor: Framefork
   name: framefork-gradle-plugins
   description: Framefork Gradle convention plugin suite (settings entrypoint plus library convention plugins)
-  java:
-    groupId: "org.framefork.build"
-    multiProject: false
+  languages:
+    java:
+      groupId: "org.framefork.build"
+      multiProject: false
 
 checksum:
   individual: true
 
 signing:
   active: ALWAYS
-  mode: MEMORY
-  armored: true
-  checksums: false
+  pgp:
+    mode: MEMORY
+    armored: true
+    checksums: false
 
 deploy:
   maven:
