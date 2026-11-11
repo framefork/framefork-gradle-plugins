@@ -26,7 +26,7 @@ Everything is **binary Kotlin** under `src/main/kotlin/org/framefork/build/` —
 | `LibraryPublishedPlugin` / `LibraryInternalPlugin` | The two version-less convention plugins a consumer applies per module. |
 | `AutoServicePlugin` / `AutoServiceConventions.kt` | The version-less per-module feature plugin (`auto-service`) and its `configureAutoService()` helper: wires Google auto-service's annotation + processor onto a `library-*` module. |
 | `LibraryConventions.kt` | `configureLibraryBaseConventions()` — the shared composition; `library-internal` == base, `library-published` == base + publishing. |
-| `JavaConventions` · `StaticAnalysisConventions` · `NullMarkedPackageInfo` · `TestConventions` · `KotlinConventions` · `PublishConventions` · `DependencyLockingConventions` | The private `internal fun Project.…()` helpers each library plugin composes. |
+| `JavaConventions` · `JavadocConventions` · `StaticAnalysisConventions` · `NullMarkedPackageInfo` · `TestConventions` · `KotlinConventions` · `PublishConventions` · `DependencyLockingConventions` | The private `internal fun Project.…()` helpers each library plugin composes. |
 | `Accessors.kt` | `frameforkProjectExtension()` — the one guarded accessor for the per-project extension. |
 | `build.gradle.kts` | Registers the four plugin IDs, pins the external plugin versions (errorprone/nullaway/test-logger/kotlin), and configures publishing (POM on all publications incl. markers). |
 

@@ -16,9 +16,20 @@ A JDK-knob misconfiguration, caught up front by the plugin. The compile-once-tes
 
 The plugin validates the **resolved** values, so `-Pjdk.version` / `-Ptests.jdk.version` overrides are checked too. Fix the `framefork { }` block or the override in your CI matrix so the pair named in the message holds. Defaults (17 / 21) are always safe; only overrides bite.
 
-## javadoc fails with `self-closing element not allowed` (or other doclint errors)
+## javadoc fails with `self-closing element not allowed`, `reference not found` (or other doclint errors)
 
-`library-published` builds a `-javadoc.jar`, and javadoc runs strict doclint over your sources. Malformed HTML in a doc comment (e.g. `<p/>`) fails the `javadoc` task. Fix the HTML in the offending source. (Whether the plugin should relax doclint by default is an open question — see `docs/design-decisions.md` and the project TODOs.)
+Every library module's `javadoc` task runs doclint with `-Xdoclint:all,-missing`: everything except the `missing` group. A public member without a doc comment is therefore fine (no `warning: no comment`), but a doc comment that is *wrong* still fails the task — malformed HTML (`<p/>` → `self-closing element not allowed`), a `{@link}` to something that doesn't exist (`reference not found`), and the rest of the `html`/`syntax`/`reference`/`accessibility` groups. `library-published` builds a `-javadoc.jar` from that task, so `publish` fails too. Fix the comment in the offending source. (A bad `@param` name never reaches javadoc: Error Prone's `InvalidParam` fails `compileJava` first.)
+
+To get the `missing` warnings back in one module (e.g. a library that wants every public member documented), switch the suite's option off and pass your own:
+
+```kotlin
+tasks.javadoc {
+    (options as CoreJavadocOptions).addBooleanOption("Xdoclint:all,-missing", false)
+    (options as CoreJavadocOptions).addBooleanOption("Xdoclint:all", true)
+}
+```
+
+On a JDK 23+ javadoc the plugin also passes `--no-fonts`, so the javadoc jar doesn't carry the ~4 MB of DejaVu web fonts javadoc bundles since JDK 23; the generated pages fall back to the browser's fonts. On an older javadoc the flag is left out (it would be an `invalid flag` there, and those versions bundle no fonts).
 
 ## New Error Prone findings after adopting (`PatternMatchingInstanceof`, `EffectivelyPrivate`, `VarWithPrimitive`, …)
 
