@@ -35,6 +35,27 @@ gh workflow run jreleaser-release.yml \
 
 The workflow builds and stages the artifacts, then JReleaser signs them, deploys the plugin and its marker artifacts to Maven Central, creates a `v<version>` GitHub release, and pushes the version bump.
 
+### The version bump after the release
+
+The bump is the composite action [`.github/actions/bump-snapshot-version`](.github/actions/bump-snapshot-version/action.yml). It fetches `main`, changes `version=<version>-SNAPSHOT` in `gradle.properties` to `<nextVersion>-SNAPSHOT`, commits as `Framefork BOT` and pushes. If someone pushed to `main` while the release ran, the push is rejected and the action starts over from the new `main`, up to 5 attempts with a growing pause between them.
+
+- If `main` already has `<nextVersion>-SNAPSHOT`, the action does nothing, so re-running a failed release job does not add a second bump commit.
+- If `main` has any other version, the action fails without changing anything: someone changed the version by hand, and you have to decide what it should be.
+- If all attempts fail, the release itself is already out; set `version=<nextVersion>-SNAPSHOT` in `gradle.properties` by hand and push it.
+
+Other framefork repositories that release the same way call the action from here, pinned to a commit SHA of this repository:
+
+```yaml
+- name: Bump to the next snapshot version
+  uses: framefork/framefork-gradle-plugins/.github/actions/bump-snapshot-version@<sha>
+  with:
+    released-version: ${{ github.event.inputs.version }}
+    next-version: ${{ github.event.inputs.nextVersion }}
+    branch: master   # that repository's default branch
+```
+
+The action pushes with the credential that `actions/checkout` persisted, so the checkout step must use a token that may push to the branch and must not set `persist-credentials: false`. Its tests are `.github/actions/bump-snapshot-version/test.sh`, which CI runs together with shellcheck.
+
 ## 2. Watch it finish
 
 ```bash

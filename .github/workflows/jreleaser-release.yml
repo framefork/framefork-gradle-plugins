@@ -89,18 +89,12 @@ jobs:
             build/jreleaser/trace.log
             build/jreleaser/output.properties
 
-      - name: Update version in properties
-        env:
-          NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
-        run: sed -i "s/^version=.*/version=${NEXT_VERSION}-SNAPSHOT/" gradle.properties
-
-      # Plain git instead of a third-party action, so no extra code handles the release token. The checkout step above
-      # persisted JRELEASER_GITHUB_TOKEN as the git credential, so do not set persist-credentials: false on it.
-      - name: Commit & Push version update
-        env:
-          NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
-        run: |
-          git config user.name 'Framefork BOT'
-          git config user.email 'bot@framefork.org'
-          git commit -m "chore: bump version to ${NEXT_VERSION}-SNAPSHOT" -- gradle.properties
-          git push origin HEAD:main
+      # Sets version=<nextVersion>-SNAPSHOT and pushes it to main, re-applying the bump on top of main if it moved during the release. Plain git inside,
+      # so no third-party code handles the release token. The checkout step above persisted JRELEASER_GITHUB_TOKEN as the git credential, so do not
+      # set persist-credentials: false on it.
+      - name: Bump to the next snapshot version
+        uses: ./.github/actions/bump-snapshot-version
+        with:
+          released-version: ${{ github.event.inputs.version }}
+          next-version: ${{ github.event.inputs.nextVersion }}
+          branch: main

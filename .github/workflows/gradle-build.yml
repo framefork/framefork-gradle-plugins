@@ -63,3 +63,16 @@ jobs:
             build/test-results/**/*.xml
           retention-days: 7
           overwrite: true
+
+  bump-snapshot-version-action:
+    name: bump-snapshot-version action
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Shellcheck
+        # shellcheck is preinstalled on the ubuntu-24.04 runner image
+        run: shellcheck .github/actions/bump-snapshot-version/*.sh
+
+      - name: Test
+        run: .github/actions/bump-snapshot-version/test.sh
