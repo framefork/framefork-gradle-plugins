@@ -1,0 +1,32 @@
+name: Bump to the next snapshot version
+description: >-
+  After a release, sets version=<next-version>-SNAPSHOT in gradle.properties and pushes the commit to the branch, retrying on top of the current
+  remote branch when the push is rejected. Does nothing if the branch already has the next snapshot version, and fails if it has any version other
+  than <released-version>-SNAPSHOT. Run it in the root of a clone made by actions/checkout with persisted credentials that may push to the branch.
+
+inputs:
+  released-version:
+    description: The version that was just released, without -SNAPSHOT.
+    required: true
+  next-version:
+    description: The next development version, without -SNAPSHOT (the action adds it).
+    required: true
+  branch:
+    description: The branch to push the version bump to, e.g. main.
+    required: true
+  attempts:
+    description: How many times to fetch, re-apply the bump and push before giving up.
+    required: false
+    default: '5'
+
+runs:
+  using: composite
+  steps:
+    - name: Bump gradle.properties to the next snapshot version and push
+      shell: bash
+      env:
+        RELEASED_VERSION: ${{ inputs.released-version }}
+        NEXT_VERSION: ${{ inputs.next-version }}
+        BRANCH: ${{ inputs.branch }}
+        ATTEMPTS: ${{ inputs.attempts }}
+      run: bash "${GITHUB_ACTION_PATH}/bump-snapshot-version.sh"
