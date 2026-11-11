@@ -10,6 +10,7 @@ import org.gradle.api.Project
  */
 internal fun Project.configureLibraryBaseConventions() {
     configureJavaConventions()
+    configureJavadocConventions()
     configureKotlinConventions()
     configureStaticAnalysis()
     configureTestConventions()

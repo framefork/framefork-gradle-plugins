@@ -9,7 +9,8 @@ Apply one plugin and every library module gets, consistently:
 - **Java toolchain model** — compile on a modern JDK, emit older-`--release` bytecode, run tests on a configurable JDK (compile-modern / target-old / test-anywhere).
 - **Static-analysis strictness** — [Error Prone](https://errorprone.info/) + [NullAway](https://github.com/uber/NullAway) in JSpecify mode (`onlyNullMarked` + `jspecifyMode`), with `@NullMarked` `package-info` generation, over `-Werror`.
 - **Tests** — JUnit 5 on the JUnit Platform + readable [test-logger](https://github.com/radarsh/gradle-test-logger-plugin) output, with stray JUnit 4 substituted away.
-- **Publishing** — `maven-publish` staging with a full POM (for published library modules).
+- **Publishing** — `maven-publish` staging with a full POM, sources and javadoc jars (for published library modules).
+- **Javadoc** — doclint without the `missing` group (no `warning: no comment` noise; broken HTML and links still fail), and no bundled web fonts on JDK 23+ javadoc.
 - **Kotlin** — applied automatically only to modules that actually contain Kotlin sources.
 
 ## Usage
@@ -116,7 +117,7 @@ To try an unreleased version against a real consumer without publishing, `publis
 
 ## Documentation
 
-- [Troubleshooting](docs/troubleshooting.md) — common adoption failures (annotation-library `-Werror` breaks, JDK-knob errors, doclint, Kotlin, dependency locking) and their fixes.
+- [Troubleshooting](docs/troubleshooting.md) — common adoption failures (annotation-library `-Werror` breaks, JDK-knob errors, javadoc doclint, Kotlin, dependency locking) and their fixes.
 - [Design decisions](docs/design-decisions.md) — why the suite is built the way it is (distribution, structure, the JDK model, the strictness stack, config-cache safety).
 - [Contributing](CONTRIBUTING.md) — building, testing, the codebase map, and the invariants a change must preserve.
 - [Releasing](RELEASING.md) — the Maven Central release procedure: pre-flight checks, triggering the workflow, and writing the changelog.
